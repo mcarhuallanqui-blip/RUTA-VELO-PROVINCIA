@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VELO 8MG — Rutas Optimizadas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f5f7fa;--wh:#fff;--s1:#f0f4f9;--s2:#e4ecf5;--bd:#d0dce8;--bd2:#b8cede;--navy:#1a3260;--nv2:#223d78;--blue:#2563eb;--bl:#dbeafe;--acc:#f97316;--tx:#0f1e35;--t2:#3a5070;--t3:#7a95b0;--gr:#059669;--gl:#d1fae5;--re:#dc2626;--rl:#fee2e2;--ye:#d97706;--yl:#fef3c7;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:grid;grid-template-rows:56px 1fr;grid-template-columns:370px 1fr;overflow:hidden;}
+header{grid-column:1/-1;background:linear-gradient(90deg,#1a3260,#223d78 60%,#1e4080);border-bottom:2px solid rgba(255,255,255,.1);display:flex;align-items:center;padding:0 18px;gap:12px;box-shadow:0 2px 12px rgba(26,50,96,.3);}
+.lw{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.li{width:34px;height:34px;background:linear-gradient(135deg,#f97316,#e8490e);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(249,115,22,.4);}
+.li svg{width:18px;height:18px;fill:white;}
+.lt{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:20px;color:white;}
+.lt span{color:#fdba74;}
+.hd{width:1px;height:30px;background:rgba(255,255,255,.2);}
+.hs-wrap{display:flex;flex:1;}
+.hs{display:flex;flex-direction:column;padding:4px 11px;border-right:1px solid rgba(255,255,255,.12);}
+.hs:last-child{border-right:none;}
+.hsv{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:16px;color:white;line-height:1;}
+.hsl{font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.7px;margin-top:2px;}
+.hpw{display:flex;align-items:center;gap:8px;margin-left:4px;}
+.hpl{font-size:10px;color:rgba(255,255,255,.65);white-space:nowrap;}
+.hpb{width:100px;height:7px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;}
+.hpf{height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:4px;transition:width .5s;}
+.hpp{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;color:#6ee7b7;min-width:34px;}
+.bex{background:rgba(16,185,129,.25);border:1px solid rgba(16,185,129,.5);color:white;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:11px;padding:6px 12px;border-radius:5px;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:5px;flex-shrink:0;transition:all .15s;}
+.bex:hover{background:rgba(16,185,129,.4);}
+aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;box-shadow:2px 0 8px rgba(0,0,0,.05);}
+.sbt{padding:14px;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.sbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px;}
+.sr{width:100%;background:var(--s1);border:1.5px solid var(--bd);border-radius:7px;padding:8px 12px 8px 34px;color:var(--tx);font-size:12px;outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%237a95b0' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.868-3.834zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:11px center;}
+.sr:focus{border-color:var(--blue);background:var(--wh);}
+.sr::placeholder{color:var(--t3);}
+.cl{overflow-y:auto;max-height:240px;padding:8px 8px 4px;flex-shrink:0;}
+.cl::-webkit-scrollbar{width:4px;}.cl::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+.cc{border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s;margin-bottom:3px;border:1.5px solid transparent;position:relative;overflow:hidden;}
+.cc:hover{background:var(--s1);border-color:var(--bd);}
+.cc.act{background:#eff6ff;border-color:var(--blue);}
+.cc.act::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#f97316,#2563eb);}
+.cct{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.cn{font-weight:700;font-size:13px;}
+.cdys{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:11px;background:var(--navy);color:white;border-radius:4px;padding:2px 7px;}
+.cm{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.pill{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;}
+.pp{background:var(--bl);color:var(--blue);border:1px solid #bfdbfe;}
+.pt{background:var(--gl);color:var(--gr);border:1px solid #a7f3d0;}
+.pi-c{background:var(--yl);color:var(--ye);border:1px solid #fde68a;}
+.pv{background:var(--gl);color:var(--gr);border:1px solid #a7f3d0;font-weight:700;}
+.pn{background:var(--rl);color:var(--re);border:1px solid #fca5a5;font-weight:700;}
+.dp{padding:10px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;display:none;background:var(--s1);}
+.dp.vis{display:block;}
+.dts{display:flex;gap:5px;flex-wrap:wrap;}
+.dt{padding:5px 11px;border-radius:5px;font-size:10px;font-family:"Barlow Condensed",sans-serif;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;color:var(--t3);background:var(--wh);letter-spacing:.4px;text-transform:uppercase;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.pp-panel{flex:1;overflow-y:auto;padding:6px;display:none;background:var(--wh);}
+.pp-panel.vis{display:block;}
+.pp-panel::-webkit-scrollbar{width:4px;}.pp-panel::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+.pdg{margin-bottom:10px;}
+.pdl{border-radius:7px;padding:7px 10px;margin-bottom:4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.pdt{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}
+.pdc{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.6);}
+.iw{background:var(--yl);border:1px solid #fde68a;border-radius:6px;padding:5px 10px;font-size:9px;color:var(--ye);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.tc{display:flex;align-items:center;gap:6px;padding:2px 8px;font-size:9px;color:var(--t3);}
+.tcl{flex:1;height:1px;background:repeating-linear-gradient(90deg,var(--bd) 0,var(--bd) 4px,transparent 4px,transparent 8px);}
+.tcb{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:1px 8px;font-weight:600;color:var(--t2);white-space:nowrap;}
+/* POS CARD */
+.pc{border:1.5px solid var(--bd);border-radius:9px;margin-bottom:5px;overflow:hidden;transition:all .15s;background:var(--wh);position:relative;}
+.pc:hover{border-color:var(--bd2);box-shadow:0 3px 10px rgba(0,0,0,.08);transform:translateY(-1px);}
+.pc.visited{border-color:#6ee7b7;background:#f0fdf9;}
+.pc.nogo{border-color:#fca5a5;background:#fff5f5;}
+.ps{height:3px;width:100%;}
+.ptop{display:flex;align-items:stretch;}
+.pnum{width:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:15px;color:white;}
+.pbody{flex:1;padding:8px 10px;min-width:0;cursor:pointer;}
+.pname{font-weight:700;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pchain{font-size:9.5px;color:var(--blue);margin-top:1px;font-weight:500;}
+.paddr{font-size:9.5px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pot{font-size:9px;color:var(--t2);margin-top:4px;background:var(--s1);border-radius:4px;padding:3px 7px;line-height:1.4;border-left:2px solid var(--bd2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.pacts{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 8px;}
+.qb{width:34px;height:28px;border-radius:6px;border:1.5px solid;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-weight:700;}
+.qbv{background:var(--gl);border-color:#a7f3d0;color:var(--gr);}
+.qbv:hover,.qbv.on{background:var(--gr);border-color:var(--gr);color:white;box-shadow:0 2px 6px rgba(5,150,105,.4);}
+.qbn{background:var(--rl);border-color:#fca5a5;color:var(--re);}
+.qbn:hover,.qbn.on{background:var(--re);border-color:var(--re);color:white;box-shadow:0 2px 6px rgba(220,38,38,.4);}
+.vst{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;margin-top:3px;}
+.vsv{background:var(--gl);color:var(--gr);border:1px solid #a7f3d0;}
+.vsn{background:var(--rl);color:var(--re);border:1px solid #fca5a5;}
+.ptm{display:flex;align-items:center;border-top:1px solid var(--bd);}
+.ptc{flex:1;padding:4px 8px;display:flex;align-items:center;gap:4px;font-size:9px;color:var(--t3);}
+.ptc+.ptc{border-left:1px solid var(--bd);}
+.ptv{font-weight:700;color:var(--t2);font-family:"Barlow Condensed",sans-serif;font-size:11px;}
+.pcmt{padding:5px 10px 6px;font-size:9.5px;color:var(--t2);background:#fffbeb;border-top:1px solid #fde68a;}
+/* Photo strip */
+.pph{display:flex;gap:4px;padding:5px 8px;border-top:1px solid var(--bd);overflow-x:auto;background:var(--s1);}
+.pph::-webkit-scrollbar{height:3px;}.pph::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+.pthumb{width:44px;height:44px;border-radius:5px;object-fit:cover;border:1.5px solid var(--bd);cursor:pointer;flex-shrink:0;transition:transform .15s;}
+.pthumb:hover{transform:scale(1.05);}
+.pphct{font-size:9px;color:var(--t3);padding:2px 4px;white-space:nowrap;align-self:center;}
+/* MAP */
+#map{width:100%;height:100%;}
+.mwrap{position:relative;overflow:hidden;}
+/* INFO */
+.iov{position:absolute;top:12px;right:12px;z-index:1000;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;min-width:220px;pointer-events:none;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12);}
+.iov.vis{display:block;}
+.ioh{display:flex;align-items:center;gap:9px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bd);}
+.ioic{width:30px;height:30px;background:linear-gradient(135deg,#f97316,#2563eb);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.iocn{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:18px;}
+.ior{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px;}
+.iorl{color:var(--t3);}.iorv{font-weight:700;}
+.iods{margin-top:8px;border-top:1px solid var(--bd);padding-top:8px;}
+.iodr{display:flex;align-items:center;gap:7px;margin-bottom:3px;font-size:10px;}
+.iodot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.iodt{flex:1;color:var(--t2);}
+.iodn{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:11px;}
+.iobar{height:3px;border-radius:2px;margin:1px 0 5px 15px;background:var(--s2);}
+.iobarf{height:100%;border-radius:2px;transition:width .5s;}
+/* PARAMS */
+.pov{position:absolute;bottom:14px;left:14px;z-index:1000;background:rgba(255,255,255,.93);backdrop-filter:blur(8px);border:1px solid var(--bd);border-radius:8px;padding:9px 13px;font-size:10px;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.1);}
+.pov .pr{color:var(--t3);margin-bottom:2px;display:flex;gap:5px;}
+.pov .pr span{color:var(--t2);font-weight:600;}
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(15,30,53,.45);backdrop-filter:blur(3px);z-index:2000;display:none;align-items:center;justify-content:center;}
+.mbg.open{display:flex;}
+.mdl{background:var(--wh);border-radius:14px;width:440px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:mIn .2s ease;}
+@keyframes mIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mhdr{padding:14px 18px 12px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--wh);z-index:1;}
+.mhic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.mhtx{flex:1;}
+.mhtl{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:16px;}
+.mhsb{font-size:10px;color:var(--t3);margin-top:1px;}
+.mcl{background:none;border:none;cursor:pointer;font-size:22px;color:var(--t3);line-height:1;padding:0;}
+.mcl:hover{color:var(--tx);}
+.mbody{padding:16px 18px;}
+.pib{background:var(--s1);border-radius:8px;padding:10px 12px;margin-bottom:14px;border-left:3px solid var(--bd2);}
+.pibn{font-weight:700;font-size:13px;margin-bottom:2px;}
+.pibs{font-size:10px;color:var(--t3);}
+.srow{display:flex;gap:10px;margin-bottom:16px;}
+.sbtn{flex:1;padding:12px;border-radius:9px;border:2px solid var(--bd);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .15s;background:var(--wh);}
+.sbtn:hover{border-color:var(--bd2);background:var(--s1);}
+.sbtn.sv{border-color:var(--gr);background:var(--gl);}
+.sbtn.sn{border-color:var(--re);background:var(--rl);}
+.sem{font-size:24px;}.slb{font-size:12px;font-weight:700;color:var(--t2);}
+.sbtn.sv .slb{color:var(--gr);}.sbtn.sn .slb{color:var(--re);}
+.fg{margin-bottom:14px;}
+.fl{font-size:11px;font-weight:600;color:var(--t2);margin-bottom:5px;display:block;}
+.fta{width:100%;background:var(--s1);border:1.5px solid var(--bd);border-radius:7px;padding:9px 12px;color:var(--tx);font-family:"Inter",sans-serif;font-size:12px;outline:none;resize:vertical;min-height:72px;transition:border-color .2s;line-height:1.5;}
+.fta:focus{border-color:var(--blue);background:var(--wh);}
+.fta::placeholder{color:var(--t3);}
+/* Photo upload */
+.pua{border:2px dashed var(--bd2);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--s1);position:relative;}
+.pua:hover,.pua.drag{border-color:var(--blue);background:var(--bl);}
+.pua input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.puaico{font-size:28px;margin-bottom:6px;}
+.puatx{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:3px;}
+.puasb{font-size:10px;color:var(--t3);}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+.pgitem{position:relative;aspect-ratio:1;border-radius:7px;overflow:hidden;background:var(--s2);}
+.pgitem img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;}
+.pgdel{position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(220,38,38,.85);color:white;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;}
+.pgdel:hover{background:var(--re);}
+.pcount{font-size:10px;color:var(--t3);margin-top:6px;display:flex;align-items:center;gap:4px;}
+.mftr{padding:10px 18px 14px;display:flex;gap:8px;justify-content:flex-end;background:var(--s1);border-top:1px solid var(--bd);position:sticky;bottom:0;}
+.bcan{background:var(--wh);border:1.5px solid var(--bd);color:var(--t2);font-family:"Inter",sans-serif;font-weight:600;font-size:12px;padding:8px 18px;border-radius:7px;cursor:pointer;}
+.bsav{background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;color:white;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:13px;padding:8px 22px;border-radius:7px;cursor:pointer;letter-spacing:.4px;text-transform:uppercase;box-shadow:0 2px 8px rgba(37,99,235,.3);transition:all .15s;}
+.bsav:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.4);}
+/* Lightbox */
+.lbx{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:3000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.lbx.open{display:flex;}
+.lbx img{max-width:90vw;max-height:78vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);}
+.lbcl{position:absolute;top:16px;right:20px;background:rgba(255,255,255,.15);border:none;color:white;font-size:24px;cursor:pointer;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.lbcl:hover{background:rgba(255,255,255,.3);}
+.lbnav{display:flex;gap:12px;align-items:center;}
+.lbbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:white;font-size:20px;cursor:pointer;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.lbbtn:hover{background:rgba(255,255,255,.3);}
+.lbcnt{color:rgba(255,255,255,.7);font-size:12px;min-width:60px;text-align:center;}
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;z-index:4000;background:#1a3260;color:white;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.25);transform:translateY(60px);opacity:0;transition:all .3s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* Province selector */
+.prov-bar{padding:12px 14px;border-bottom:1px solid var(--bd);background:var(--s1);flex-shrink:0;}
+.prov-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.pvcard{border:1.5px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s;background:var(--wh);}
+.pvcard:hover{border-color:var(--blue);background:#eff6ff;}
+.pvcard.act{border-color:var(--blue);background:#eff6ff;}
+.pvcard.act .pvname{color:var(--blue);}
+.pvname{font-weight:700;font-size:11px;color:var(--tx);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pvmeta{display:flex;gap:5px;font-size:9px;color:var(--t3);}
+.pvmeta b{color:var(--t2);font-weight:600;}
+/* Active province banner */
+.prov-active-banner{background:linear-gradient(90deg,#1a3260,#2563eb);color:white;padding:5px 14px;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;display:none;}
+.prov-active-banner.vis{display:flex;}
+.pab-label{display:flex;align-items:center;gap:6px;}
+.pab-clear{background:rgba(255,255,255,.2);border:none;color:white;font-size:10px;padding:3px 9px;border-radius:4px;cursor:pointer;font-weight:600;}
+.pab-clear:hover{background:rgba(255,255,255,.35);}
+
+/* Named photo slots */
+.photo-slots-wrap{display:flex;flex-direction:column;gap:8px;}
+.pslot{border:1.5px solid var(--bd);border-radius:9px;overflow:hidden;transition:border-color .2s;}
+.pslot.has-photo{border-color:#a7f3d0;background:#f0fdf9;}
+.pslot-hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:background .15s;user-select:none;}
+.pslot-hdr:hover{background:var(--s1);}
+.pslot.has-photo .pslot-hdr{background:#ecfdf5;}
+.pslot-num{width:22px;height:22px;border-radius:5px;background:var(--s2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--t3);flex-shrink:0;}
+.pslot.has-photo .pslot-num{background:#059669;color:white;}
+.pslot-label{flex:1;font-size:11px;font-weight:600;color:var(--t2);}
+.pslot.has-photo .pslot-label{color:#065f46;}
+.pslot-tag{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;}
+.tag-opt{background:var(--s2);color:var(--t3);}
+.tag-ok{background:var(--gl);color:var(--gr);}
+.pslot-action{font-size:18px;flex-shrink:0;}
+.pslot-body{display:none;border-top:1px solid var(--bd);}
+.pslot.open .pslot-body{display:block;}
+.pslot-preview{position:relative;background:var(--s2);}
+.pslot-preview img{width:100%;max-height:180px;object-fit:cover;display:block;cursor:pointer;}
+.pslot-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.5));padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}
+.pslot-fname{font-size:9px;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%;}
+.pslot-del{background:rgba(220,38,38,.85);border:none;color:white;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:700;flex-shrink:0;}
+.pslot-del:hover{background:#dc2626;}
+.pslot-upload{padding:12px;text-align:center;cursor:pointer;position:relative;}
+.pslot-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.pslot-upload:hover{background:var(--s1);}
+.pslot-upload-ico{font-size:22px;margin-bottom:4px;}
+.pslot-upload-tx{font-size:11px;color:var(--t2);font-weight:500;}
+.pslot-upload-sb{font-size:9px;color:var(--t3);margin-top:2px;}
+/* Photo count summary */
+.photo-summary{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--s1);border-radius:8px;font-size:10px;color:var(--t2);margin-top:4px;}
+.photo-summary .ps-count{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:13px;color:var(--blue);}
+
+/* Leaflet popup */
+.lfp .leaflet-popup-content-wrapper{background:rgba(255,255,255,.98)!important;color:#0f1e35!important;border:1.5px solid #d0dce8!important;border-radius:10px!important;box-shadow:0 8px 24px rgba(0,0,0,.15)!important;font-family:"Inter",sans-serif!important;padding:0!important;}
+.lfp .leaflet-popup-content{margin:0!important;padding:13px 15px!important;min-width:250px!important;max-width:310px!important;}
+.lfp .leaflet-popup-tip{background:white!important;}
+.lfp .leaflet-popup-close-button{color:#7a95b0!important;top:7px!important;right:9px!important;font-size:16px!important;}
+.ppbdg{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:7px;}
+.ppnm{font-family:"Barlow Condensed",sans-serif;font-weight:800;font-size:15px;margin-bottom:2px;line-height:1.2;padding-right:16px;}
+.ppch{font-size:10px;color:#2563eb;margin-bottom:6px;font-weight:500;}
+.pprow{display:flex;align-items:flex-start;gap:5px;font-size:10px;color:#3a5070;margin-bottom:3px;}
+.pptm{display:flex;gap:5px;margin:8px 0 6px;flex-wrap:wrap;}
+.pptc{background:#f0f4f9;border:1px solid #d0dce8;border-radius:5px;padding:4px 8px;font-size:10px;display:flex;align-items:center;gap:4px;}
+.pptv{font-weight:700;font-family:"Barlow Condensed",sans-serif;font-size:12px;}
+.ppot{background:#f0f4f9;border-radius:6px;padding:7px 9px;margin-top:6px;border-left:3px solid #b8cede;}
+.ppotl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#7a95b0;margin-bottom:3px;}
+.ppott{font-size:10px;color:#3a5070;line-height:1.5;}
+.ppvst{margin-top:8px;padding:7px 10px;border-radius:7px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.ppbtn{width:100%;margin-top:8px;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;color:white;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:12px;padding:8px;border-radius:7px;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;}
+.ppbtn:hover{opacity:.9;}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fi{animation:fi .22s ease;}
+</style>
+</head>
+<body>
+<header>
+  <div class="lw">
+    <div class="li"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+    <div class="lt">VELO <span>8MG</span></div>
+  </div>
+  <div class="hd"></div>
+  <div class="hs-wrap">
+    <div class="hs"><span class="hsv">190</span><span class="hsl">Total POS</span></div>
+    <div class="hs"><span class="hsv">17</span><span class="hsl">Ciudades</span></div>
+    <div class="hs"><span class="hsv">24</span><span class="hsl">Días</span></div>
+    <div class="hs"><span class="hsv" id="hv" style="color:#6ee7b7">0</span><span class="hsl">✅ Visitados</span></div>
+    <div class="hs"><span class="hsv" id="hn" style="color:#fca5a5">0</span><span class="hsl">❌ No se pudo</span></div>
+    <div class="hs"><span class="hsv" id="hpe">190</span><span class="hsl">Pendientes</span></div>
+  </div>
+  <div class="hpw">
+    <span class="hpl">Avance</span>
+    <div class="hpb"><div class="hpf" id="hpf" style="width:0%"></div></div>
+    <span class="hpp" id="hpp">0%</span>
+  </div>
+  <button class="bex" onclick="doExport()">
+    <svg width="13" height="13" fill="white" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    Exportar Excel
+  </button>
+</header>
+<aside>
+  <div class="prov-active-banner" id="prov-banner"><div class="pab-label"><span>📍</span><span id="pab-name">—</span></div><button class="pab-clear" onclick="clearProvince()">✕ Ver todo</button></div>
+  <div class="sbt">
+    <div class="sbl">Selecciona una ciudad</div>
+    <input class="sr" id="srch" type="text" placeholder="Buscar ciudad...">
+  </div>
+  <div class="prov-bar" id="prov-bar">
+    <div class="sbl" style="margin-bottom:7px">Selecciona tu departamento</div>
+    <div class="prov-grid" id="prov-grid"></div>
+  </div>
+  <div class="cl" id="cl"></div>
+  <div class="dp" id="dp"><div class="sbl" style="margin-bottom:7px">Filtrar por día</div><div class="dts" id="dts"></div></div>
+  <div class="pp-panel" id="ppl"><div id="pll"></div></div>
+</aside>
+<div class="mwrap">
+  <div id="map"></div>
+  <div class="iov" id="iov">
+    <div class="ioh">
+      <div class="ioic"><svg width="15" height="15" fill="white" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+      <div class="iocn" id="iocn">—</div>
+    </div>
+    <div class="ior"><span class="iorl">Total POS</span><span class="iorv" id="iopos">—</span></div>
+    <div class="ior"><span class="iorl">✅ Visitados</span><span class="iorv" id="iovis" style="color:#059669">0</span></div>
+    <div class="ior"><span class="iorl">❌ No se pudo</span><span class="iorv" id="iong" style="color:#dc2626">0</span></div>
+    <div class="ior"><span class="iorl">Días</span><span class="iorv" id="iod">—</span></div>
+    <div class="iods" id="iobr"></div>
+  </div>
+  <div class="pov">
+    <div class="pr">Horario: <span>08:00–17:00 · almuerzo 13:00–14:00</span></div>
+    <div class="pr">Efectivo: <span>7h = 420 min · 15 min/POS · Máx 20 POS</span></div>
+    <div class="pr">Velocidad: <span>25 km/h promedio ciudad</span></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="mbg" id="mbg">
+  <div class="mdl">
+    <div class="mhdr">
+      <div class="mhic" id="mhic">📋</div>
+      <div class="mhtx"><div class="mhtl" id="mhtl">Registrar visita</div><div class="mhsb" id="mhsb">—</div></div>
+      <button class="mcl" onclick="closeM()">×</button>
+    </div>
+    <div class="mbody">
+      <div class="pib"><div class="pibn" id="mpn">—</div><div class="pibs" id="mps">—</div></div>
+      <div class="srow">
+        <div class="sbtn" id="srv" onclick="selSt('visited')"><span class="sem">✅</span><span class="slb">Visitado</span></div>
+        <div class="sbtn" id="srn" onclick="selSt('nogo')"><span class="sem">❌</span><span class="slb">No se pudo</span></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Comentario / Observación</label>
+        <textarea class="fta" id="fcmt" placeholder="Ej: Se instaló dispenser, cliente ausente..."></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">📷 Fotos de implementación</label>
+        <div class="photo-slots-wrap" id="photo-slots-wrap"></div>
+        <div class="photo-summary" id="photo-summary" style="display:none">
+          <span>📷</span><span class="ps-count" id="ps-cnt">0</span><span>de 7 fotos subidas</span>
+        </div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="bcan" onclick="closeM()">Cancelar</button>
+      <button class="bsav" onclick="saveV()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lbx" id="lbx">
+  <button class="lbcl" onclick="closeLB()">×</button>
+  <img id="lbimg" src="" alt="">
+  <div class="lbnav">
+    <button class="lbbtn" onclick="lbNav(-1)">‹</button>
+    <span class="lbcnt" id="lbcnt">1 / 1</span>
+    <button class="lbbtn" onclick="lbNav(1)">›</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA={"AREQUIPA":{"total_pos":46,"total_days":3,"days":[{"day":1,"points":[{"id":"709288","pos":"OXXO - GORRIONES","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"HFXF+2WX, Arequipa 04001","distrito":"AREQUIPA","lat":-16.402157933261,"lon":-71.525086784655,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"702487","pos":"OXXO - SALLE","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Av. La Salle N° 103 - Cercado - AQP","distrito":"AREQUIPA","lat":-16.4006457,"lon":-71.5256491,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.4,"arrival_time":"08:15","departure_time":"08:30"},{"id":"705217","pos":"TAMBO - SIGLOXX-C1-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Siglo XX N° 152- Cercado, Esquina con Corbacho Nº 153, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.40043,"lon":-71.52984,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.1,"arrival_time":"08:31","departure_time":"08:46"},{"id":"705222","pos":"TAMBO - RIVERO C3 - AQP","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Rivero 312-A- 312-B, Cercado, distrito, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.396349,"lon":-71.532747,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.3,"arrival_time":"08:47","departure_time":"09:02"},{"id":"691811","pos":"TAMBO - CONSUELO-C4-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Consuelo N° 400 distrito, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.4008229,"lon":-71.5395123,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.1,"arrival_time":"09:04","departure_time":"09:19"},{"id":"688406","pos":"TAMBO - LAMERCED-C5-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle La Merced N° 542 y 542-A Esquina con La Av. Salaverry N° 231, distrito, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.4059697,"lon":-71.5398362,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.4,"arrival_time":"09:21","departure_time":"09:36"},{"id":"702486","pos":"OXXO - PAZ","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Av. Parra N° 100-A","distrito":"AREQUIPA","lat":-16.406170824624,"lon":-71.540192360883,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.1,"arrival_time":"09:36","departure_time":"09:51"},{"id":"691540","pos":"TAMBO - TACNAYARICA-C1-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Tacna y Arica 125, distrito de Cercado de Arequipa, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.407985,"lon":-71.540684,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.5,"arrival_time":"09:51","departure_time":"10:06"},{"id":"651930","pos":"OXXO - CHOCANO","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Calle José Santos Chocano 106, Cercado Arequipa.","distrito":"AREQUIPA","lat":-16.40471655,"lon":-71.54659631,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":1.7,"arrival_time":"10:08","departure_time":"10:23"},{"id":"687771","pos":"TAMBO - VELARDE-C1-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Samuel Velarde Nº 116-A, Mz. C, Lt. 53 SUBLOTE A - Arequipa - AREQUIPA","distrito":"AREQUIPA","lat":-16.40356,"lon":-71.549414,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"10:24","departure_time":"10:39"},{"id":"431192","pos":"PRIMAX - E/S UMACOLLO","cadena":"COESTI S.A.C.","direccion":"Av. José A. Quiñonez Esq. Calle S/N Mz.1,2,3 y 4 - Urb. Valencia y Lt.B -12 Urb. Magisterial","distrito":"AREQUIPA","lat":-16.3964382,"lon":-71.547312,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":2.0,"arrival_time":"10:41","departure_time":"10:56"},{"id":"702488","pos":"OXXO - MAGISTERIAL","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"MZ. D LOTE 1. URB. BARRIO MAGISTERIAL N°2 DISTRITO DE YANAHUARA","distrito":"YANAHUARA","lat":-16.3963168,"lon":-71.5451398,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.6,"arrival_time":"10:57","departure_time":"11:12"},{"id":"702489","pos":"OXXO - FAMILIA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Los Cedros Mz. C, Lote 9, Yanahuara, Arequipa - Yanahuara","distrito":"YANAHUARA","lat":-16.39330507522,"lon":-71.548763370744,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":1.2,"arrival_time":"11:13","departure_time":"11:28"},{"id":"680569","pos":"OXXO - MALLPLAZA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"AV. EJÉRCITO 795, TIENDA BS-118, PISO -1","distrito":"CAYMA","lat":-16.390191870422,"lon":-71.546560264542,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":1.0,"arrival_time":"11:29","departure_time":"11:44"},{"id":"431193","pos":"PRIMAX - E/S YANAHUARA","cadena":"COESTI S.A.C.","direccion":"Av. Ejército 504","distrito":"AREQUIPA","lat":-16.3905744,"lon":-71.5440585,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.6,"arrival_time":"11:44","departure_time":"11:59"},{"id":"701775","pos":"TAMBO - EJERCITO-C2-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av Ejercito 206A - Pueblo Tradicional Mz. C Lote 29, Zona Tradicional, distrito de Yanahuara, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.391648,"lon":-71.541668,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.7,"arrival_time":"12:00","departure_time":"12:15"},{"id":"702494","pos":"OXXO - LLOSA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"V.A BELAUNDE MZ D, LOTE 17 - YANAHURA","distrito":"YANAHUARA","lat":-16.3955716,"lon":-71.5544989,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":3.4,"arrival_time":"12:18","departure_time":"12:33"},{"id":"702490","pos":"OXXO - EFIGIES","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"CALLE PANCHO FIERRO MZ. URB. A LOTE 1 , URB. RESIDENCIAL LAS EFIGIES DISTRITO DE CAYMA","distrito":"CAYMA","lat":-16.3805928,"lon":-71.5519511,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":4.1,"arrival_time":"12:38","departure_time":"12:53"},{"id":"702495","pos":"OXXO - ROSARIO","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Urb. Virgen del rosario II, Mz A, Lote 3 - Cerro Colorado","distrito":"CERRO COLORADO","lat":-16.3805285,"lon":-71.5505508,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.4,"arrival_time":"12:53","departure_time":"13:08"},{"id":"710722","pos":"OXXO - CATALINA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Av. Bolognesi D-3 – Cayma","distrito":"CAYMA","lat":-16.3775334,"lon":-71.5446265,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":1.7,"arrival_time":"14:10","departure_time":"14:25"}],"count":20,"travel_min":25.1,"total_min":325.1},{"day":2,"points":[{"id":"431194","pos":"REPSOL - SEVILLA","cadena":"REPSOL COMERCIAL SAC","direccion":"AV. BOLOGNESI NRO. 904","distrito":"AREQUIPA","lat":-16.3716801,"lon":-71.5441113,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) | FACING 3K: CAMBIAR FACING NUEVO 3K | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"702493","pos":"OXXO - ANDENES","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Mz. A Lote 1 Urb. Valle Escondido","distrito":"CAYMA","lat":-16.3710474,"lon":-71.5444245,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.2,"arrival_time":"08:15","departure_time":"08:30"},{"id":"431195","pos":"AVA - LA FONDA","cadena":"GRIFO AVA","direccion":"AVENIDA AVIACIÓN 600, COLORADO","distrito":"AREQUIPA","lat":-16.3754378,"lon":-71.5570668,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA)","travel_from_prev":3.4,"arrival_time":"08:33","departure_time":"08:48"},{"id":"702491","pos":"OXXO - AMERICAS","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Av. Villa Hermosa 419 - Cerro Colorado","distrito":"CERRO COLORADO","lat":-16.376194588584,"lon":-71.558942671055,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.5,"arrival_time":"08:49","departure_time":"09:04"},{"id":"431188","pos":"PRIMAX - E/S EL VELOZ","cadena":"COESTI S.A.C.","direccion":"Av. Aviación 6.5","distrito":"AREQUIPA","lat":-16.3644957,"lon":-71.5607917,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":3.2,"arrival_time":"09:07","departure_time":"09:22"},{"id":"690888","pos":"TAMBO - LOSANDES-C5-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Los Andes (A.S.A) N° 511, Alto Selva Alegre Zona B, Mz. 03, Lote 01, distrito Alto Selva Alegre, y provincia de Arequipa","distrito":"AREQUIPA","lat":-16.3807045,"lon":-71.5191597,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":11.5,"arrival_time":"09:33","departure_time":"09:48"},{"id":"705223","pos":"TAMBO - VENEZUELA-C3-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Venezuela Nº 332, Mz. F, Lote 29, Cercado, Urbanización Negrita, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.405213,"lon":-71.52149,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":6.6,"arrival_time":"09:55","departure_time":"10:10"},{"id":"683274","pos":"TAMBO - LAMBRAMANI","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. LAMBRAMANI MZ B LT 01 LAMBRAMANI CERCADO - AREQUIPA","distrito":"AREQUIPA","lat":-16.4089608,"lon":-71.5236727,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.1,"arrival_time":"10:11","departure_time":"10:26"},{"id":"702484","pos":"OXXO - CANTUTA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Mz. A, Lote 26, Sub Lote 26-A, Urb. Cooperativa La Cantuta, Jose Luis Bustamante y Rivero","distrito":"JOSE LUIS BUSTAMENTE Y RIVERO","lat":-16.4115487,"lon":-71.5209075,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":1.0,"arrival_time":"10:27","departure_time":"10:42"},{"id":"702492","pos":"OXXO - ADEPA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Calle N° 01, S/N, La Esperanza Adepa - Mz. O, Lote 3 - JLBR","distrito":"JOSE LUIS BUSTAMENTE Y RIVERO","lat":-16.4175504,"lon":-71.5269528,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":2.2,"arrival_time":"10:44","departure_time":"10:59"},{"id":"702485","pos":"OXXO - GLORIA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"MZ. C, LT. 7, COOP. VIVIENDA LECHE GLORIA S.A. LTDA. N° 322, DISTRITO AREQUIPA","distrito":"AREQUIPA","lat":-16.4116267,"lon":-71.5315189,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":2.0,"arrival_time":"11:01","departure_time":"11:16"},{"id":"691819","pos":"TAMBO - MOSTAJO-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Mz. C Lote 5 URB. Villa Gloria distrito, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.411445,"lon":-71.531725,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.1,"arrival_time":"11:16","departure_time":"11:31"},{"id":"431191","pos":"PRIMAX - E/S SUR PERU","cadena":"COESTI S.A.C.","direccion":"Av. Venezuela 2515, Parque Industrial","distrito":"AREQUIPA","lat":-16.4146228,"lon":-71.5420938,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":2.8,"arrival_time":"11:34","departure_time":"11:49"},{"id":"431189","pos":"PRIMAX - E/S LANIFICIO","cadena":"COESTI S.A.C.","direccion":"Av. Andres Avelino Caceres Mz. C, Lote 1","distrito":"AREQUIPA","lat":-16.4260656,"lon":-71.5328827,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":3.9,"arrival_time":"11:53","departure_time":"12:08"},{"id":"702483","pos":"OXXO - TRISTAN","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Calle. Andrés A. Cáceres N° S/N  - Quinta Tristan - Mz V1 / Lote 11 / Sec C - JLBR","distrito":"JOSE LUIS BUSTAMENTE Y RIVERO","lat":-16.4251466,"lon":-71.5297504,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.8,"arrival_time":"12:09","departure_time":"12:24"},{"id":"682125","pos":"TAMBO - GARCILAZO-C1-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. GARCILAZO DE LA VEGA 104 -PJ 13 DE ENERO MZ\"E\" LT 3 - AREQUIPA","distrito":"AREQUIPA","lat":-16.4309252,"lon":-71.5325379,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.7,"arrival_time":"12:26","departure_time":"12:41"},{"id":"705219","pos":"TAMBO - SOCABAYA-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Socabaya Nº 222 Mz. B Lote 12-B, Urb. San Martin de Socabaya, distrito de Socabaya, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.43874,"lon":-71.530183,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.2,"arrival_time":"12:43","departure_time":"12:58"},{"id":"706208","pos":"TAMBO - INDEPENDENCIA-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Independencia Nº 112, PP. JJ. Ciudad Mi Trabajo , distrito de Socabaya, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.44808,"lon":-71.53236,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.6,"arrival_time":"14:00","departure_time":"14:15"},{"id":"651931","pos":"OXXO - UNIDOS","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Lote La Caña 1.1 Distrito Jose Luis Bustamante y Rivero, Arequipa","distrito":"AREQUIPA","lat":-16.42879228,"lon":-71.52355164,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":5.6,"arrival_time":"14:21","departure_time":"14:36"},{"id":"702482","pos":"OXXO - CULTURA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Calle Daniel Alcides Carrion Mz. M Lote 12 - Jose Luis Bustamante y Rivero","distrito":"JOSE LUIS BUSTAMENTE Y RIVERO","lat":-16.425091099335,"lon":-71.521609423045,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":1.1,"arrival_time":"14:37","departure_time":"14:52"}],"count":20,"travel_min":52.5,"total_min":352.5},{"day":3,"points":[{"id":"706185","pos":"TAMBO - PIZARRO-C1-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Pizarro 135 Pueblo tradicional Paucarpata, distrito de Paucarpata, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.424296,"lon":-71.515566,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"431190","pos":"PRIMAX - E/S RESERVORIO","cadena":"COESTI S.A.C.","direccion":"Av. Pizarro 141","distrito":"AREQUIPA","lat":-16.4261042,"lon":-71.5148815,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.5,"arrival_time":"08:15","departure_time":"08:30"},{"id":"691823","pos":"TAMBO - COLON-C1-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Colon Nº 100-A, distrito José Luis Bustamante y Rivero, provincia y departamento de Arequipa","distrito":"AREQUIPA","lat":-16.430923,"lon":-71.512209,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.5,"arrival_time":"08:32","departure_time":"08:47"},{"id":"707944","pos":"TAMBO - KENNEDY - AQP","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV KENNEDY 1507 MZ D LT30 - URB. CESAR VALLEJO - DIST. PAUCARPATA - DPTO AREQUIPA PROV. AREQUIPA","distrito":"AREQUIPA","lat":-16.421232675601,"lon":-71.507949321534,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.8,"arrival_time":"08:49","departure_time":"09:04"},{"id":"689912","pos":"TAMBO - JESUS-C13-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Urbanización Industrial Cayro, Mz. A, Lt. 01B-2 - Av Jesus cuadra 13 distrito de Paucarpata, provincia y departamento de Arequipa,","distrito":"AREQUIPA","lat":-16.4167297,"lon":-71.506236,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.3,"arrival_time":"09:06","departure_time":"09:21"},{"id":"680379","pos":"TAMBO - JESUS-C22-AREQUIPA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Jesús N° 2201, Mz. B, Lote 1, Urb. Porongoche, distrito de Paucarpata, provincia y departamento de Arequipa,","distrito":"AREQUIPA","lat":-16.4197967,"lon":-71.5014065,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.5,"arrival_time":"09:22","departure_time":"09:37"}],"count":6,"travel_min":7.6,"total_min":97.6}]},"ICA":{"total_pos":20,"total_days":1,"days":[{"day":1,"points":[{"id":"709434","pos":"OXXO - AMARU","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Av. Ayabaca N° 1008","distrito":"ICA","lat":-14.07105123,"lon":-75.73546891,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"709558","pos":"TAMBO - AYABACA-C4","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Ayabaca, Mz. H-4, Lt. 12, urb. San Isidro, distrito, provincia y departamento de Ica","distrito":"ICA","lat":-14.07114437,"lon":-75.72985705,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.5,"arrival_time":"08:16","departure_time":"08:31"},{"id":"637549","pos":"OXXO - AYABACA","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Av. Ayabaca 403, Urb. San Isidro, Ica.","distrito":"ICA","lat":-14.070973942379,"lon":-75.729630681134,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":0.1,"arrival_time":"08:31","departure_time":"08:46"},{"id":"702568","pos":"TAMBO - SANMARTIN-C5-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. San Martin No 598 Mz. A Urb. La Morales, distrito, provincia y departamento de Ica","distrito":"ICA","lat":-14.069489,"lon":-75.729247,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.4,"arrival_time":"08:47","departure_time":"09:02"},{"id":"706767","pos":"TAMBO - CUTERVO-C2-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Cutervo Oeste Nº 0288, urbanización San Isidro, Cercado Ica, provincia y departamento de Ica","distrito":"ICA","lat":-14.072553,"lon":-75.728844,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"09:02","departure_time":"09:17"},{"id":"710760","pos":"TAMBO - SANMARTIN-C12-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"CLL SAN MARTIN MZ K-3 LTE 35 CERCADO DE ICA","distrito":"ICA","lat":-14.074030203294,"lon":-75.72755650731,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.5,"arrival_time":"09:18","departure_time":"09:33"},{"id":"626858","pos":"TAMBO - EL SOL - ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"SOL DE ICA MZ E LT O1 URB SOL DE ICA","distrito":"ICA","lat":-14.0781135,"lon":-75.726243,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.1,"arrival_time":"09:34","departure_time":"09:49"},{"id":"709433","pos":"OXXO - DIVINO","cadena":"CADENA DEL COMERCIO DEL PERÚ SAC","direccion":"Urb. Divino Maestro Mz. F Lote 43  - Ica","distrito":"ICA","lat":-14.0788397600745,"lon":-75.7365254,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA)","travel_from_prev":2.7,"arrival_time":"09:52","departure_time":"10:07"},{"id":"707931","pos":"TAMBO - PUENTE BLANCO -ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Mz. Puente Blanco VI Etapa Mz. A Lote 4, urbanización Puente Blanco, distrito, provincia y departamento de Ica","distrito":"ICA","lat":-14.076378926476,"lon":-75.738801796559,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.9,"arrival_time":"10:08","departure_time":"10:23"},{"id":"706632","pos":"TAMBO - AYABACA-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AA.HH Asociación de Vivienda de la Urbanización Popular El Regional de Ica, Manzana \"A\", Sub Lote 6A, Sector Comatrana del Distrito de Ica, Provincia y departamento de Ica","distrito":"ICA","lat":-14.073974,"lon":-75.74448,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.6,"arrival_time":"10:24","departure_time":"10:39"},{"id":"505003","pos":"TAMBO - MATIAS C6 -ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Jose Matias Manzanilla Num 0685 - 0695, Urb. San Miguel, Distrito, Provincia y departamento de Ica","distrito":"ICA","lat":-14.0663172,"lon":-75.7384013,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":2.6,"arrival_time":"10:42","departure_time":"10:57"},{"id":"651291","pos":"TAMBO - MATIAS-C3-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. MATIAS MANZANILLA 386 Y CALLE FERNANDO LEON 122 URB. SAN MIGUEL POR CONFIRMAR","distrito":"ICA","lat":-14.0651887,"lon":-75.7354975,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"10:58","departure_time":"11:13"},{"id":"710251","pos":"TAMBO - MUNICIPALIDAD-C2-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Municipalidad Nº 271-279, 1er piso y sótano, Cercado de Ica, distrito, provincia y departamento de Ica","distrito":"ICA","lat":-14.0644003,"lon":-75.7306808,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.3,"arrival_time":"11:14","departure_time":"11:29"},{"id":"706183","pos":"TAMBO - PIURA -C1 ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Piura Nº 172 -174- Cercado de Ica, distrito, provincia y departamento de Ica","distrito":"ICA","lat":-14.0669,"lon":-75.72736,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.1,"arrival_time":"11:30","departure_time":"11:45"},{"id":"650898","pos":"TAMBO - HUANUCO -C1-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"CALLE HUANUCO N° 183 / 301 CERCADO DE ICA","distrito":"ICA","lat":-14.0672663,"lon":-75.7269149,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.2,"arrival_time":"11:45","departure_time":"12:00"},{"id":"666314","pos":"TAMBO - La Angostura","cadena":"TIENDAS TAMBO S.A.C.","direccion":"URBANIZACIÓN LA ANGOSTURA MZ F LT 8 ZONA B DISTRITO DE ICA","distrito":"ICA","lat":-14.0467726,"lon":-75.7495358,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":8.0,"arrival_time":"12:08","departure_time":"12:23"},{"id":"710258","pos":"TAMBO - GOTUZZO-C1-ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Avenida Victorio Gotuzzo Nº 103, Mz. 116 Lote 03, Centro Poblado La Tinguiña – Zona B, distrito de La Tinguiña, provincia y departamento de Ica","distrito":"LA TINGUIÑA","lat":-14.0398977,"lon":-75.7109111,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":10.2,"arrival_time":"12:33","departure_time":"12:48"},{"id":"617255","pos":"PRIMAX - PRIMAVERA 2","cadena":"COESTI S.A.C.","direccion":"Carretera Panamericana Sur Km 307","distrito":"ICA","lat":-14.1003184,"lon":-75.7166318,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":16.2,"arrival_time":"14:05","departure_time":"14:20"},{"id":"617254","pos":"PRIMAX - GUADALUPE","cadena":"COESTI S.A.C.","direccion":"Panamericana Sur km 293","distrito":"ICA","lat":-13.9890726,"lon":-75.7715252,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":32.9,"arrival_time":"14:52","departure_time":"15:07"},{"id":"709777","pos":"TAMBO - LIMA C1 - ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Centro Poblado Guadalupe Mza G Lote 14 - Calle Lima, distrito de Salas, provincia y departamento de Ica.","distrito":"ICA","lat":-13.98564756,"lon":-75.77248728,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.9,"arrival_time":"15:08","departure_time":"15:23"}],"count":20,"travel_min":83.8,"total_min":383.8}]},"CHICLAYO":{"total_pos":18,"total_days":2,"days":[{"day":1,"points":[{"id":"431212","pos":"PRIMAX - E/S INTERNACIONAL","cadena":"COESTI S.A.C.","direccion":"Carretera Panamericana Norte KM 777 - Sector San Nicolás - Distrito, Provincia y Departamento Lambayeque.","distrito":"CHICLAYO","lat":-6.7285759,"lon":-79.8898568,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO)","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"641186","pos":"TAMBO - JUANXXIII-LAMBAYEQUE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle 2 de mayo N° 954, Mz. 76, Lt. 74, Cercado Lambayeque, distrito, provincia y departamento de Lambayeque","distrito":"CHICLAYO","lat":-6.7061017,"lon":-79.9066634,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":7.5,"arrival_time":"08:22","departure_time":"08:37"},{"id":"600738","pos":"TAMBO - CASTILLA-C6-LAMBAYEQUE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Avenida Ramón Castilla N° 601 Mz. A Lt. 1, Cercado Lambayeque, Distrito, Provincia y Departamento de Lambayeque.","distrito":"LAMBAYEQUE","lat":-6.7030979,"lon":-79.9022693,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":1.4,"arrival_time":"08:38","departure_time":"08:53"},{"id":"633254","pos":"TAMBO - MIRAFLORES-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"MZ B LT 1 URB. MIRAFLORES I ETAPA - DISTRITO CHICLAYO","distrito":"CHICLAYO","lat":-6.7597331,"lon":-79.8613675,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":18.6,"arrival_time":"09:12","departure_time":"09:27"},{"id":"499108","pos":"TAMBO - MALL AVENTURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Panamericana Norte cruce con Avenida Escrivá de Balaguer.","distrito":"CHICLAYO","lat":-6.7626501,"lon":-79.8607128,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.8,"arrival_time":"09:28","departure_time":"09:43"},{"id":"431200","pos":"PRIMAX - E/S SANTA ELENA","cadena":"COESTI S.A.C.","direccion":"AV. JUAN TOMIS STACK 205","distrito":"CHICLAYO","lat":-6.7723263,"lon":-79.8632894,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG + NICHO + REEL (VELO NUEVO + VUSE NUEVO + ECLIPSE)","travel_from_prev":2.7,"arrival_time":"09:46","departure_time":"10:01"},{"id":"431198","pos":"PRIMAX - E/S PALMERAS","cadena":"COESTI S.A.C.","direccion":"Av. Bolognesi con Av. Grau S/N","distrito":"CHICLAYO","lat":-6.7770183,"lon":-79.8442519,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":5.2,"arrival_time":"10:06","departure_time":"10:21"},{"id":"690867","pos":"TAMBO - LUISGONZALES-C5-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Luis Gonzales 0532 Int. 558, Distrito y Provincia de Chiclayo, departamento de Lambayeque","distrito":"CHICLAYO","lat":-6.773160524,"lon":-79.84256765,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.1,"arrival_time":"10:22","departure_time":"10:37"},{"id":"600739","pos":"TAMBO - ELIASAGUIRRE-C3-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle ELIAS AGUIRRE 0394 ( 388- 396 ) MZ 134 LT 30 NUM 388 -396 distrito de Chiclayo -","distrito":"CHICLAYO","lat":-6.7715867,"lon":-79.8416072,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":0.5,"arrival_time":"10:37","departure_time":"10:52"},{"id":"649253","pos":"TAMBO - SANJOSE-C8-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle San José N° 857, distrito y provincia de Chiclayo, departamento de Lambayeque","distrito":"CHICLAYO","lat":-6.7715013,"lon":-79.8378836,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.0,"arrival_time":"10:53","departure_time":"11:08"},{"id":"625789","pos":"TAMBO - LUIS GONZALES-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. LUIS GONZALES 1285 LC 102, CHICLAYO","distrito":"CHICLAYO","lat":-6.7677568,"lon":-79.841866,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.5,"arrival_time":"11:10","departure_time":"11:25"},{"id":"705226","pos":"TAMBO - ELDORADO-C12-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. El Dorado 01261, Mz. I, Lote 07 Urb. Francisco Bolognesi distrito de Jose Leonardo Ortiz, provincia de Chiclayo, departamento de Lambayeque","distrito":"CHICLAYO","lat":-6.758755,"lon":-79.84343,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.4,"arrival_time":"11:27","departure_time":"11:42"},{"id":"431201","pos":"PRIMAX - E/S SANTA VICTORIA","cadena":"COESTI S.A.C.","direccion":"Av. Jose Balta 012 con Las Casuarinas 120","distrito":"CHICLAYO","lat":-6.7788963,"lon":-79.8386677,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":5.5,"arrival_time":"11:48","departure_time":"12:03"},{"id":"601624","pos":"TAMBO - LAFLORIDA-C4-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle La Florida N° 448, Urbanización Santa Victoria, distrito y provincia de Chiclayo,","distrito":"CHICLAYO","lat":-6.7802067,"lon":-79.8410637,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.7,"arrival_time":"12:03","departure_time":"12:18"},{"id":"431213","pos":"REPSOL - LA VICTORIA","cadena":"REPSOL COMERCIAL SAC","direccion":"AV  LOS INCAS100","distrito":"CHICLAYO","lat":-6.7884394,"lon":-79.8443906,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) | FACING 3K: CAMBIAR FACING NUEVO 3K | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG","travel_from_prev":2.4,"arrival_time":"12:21","departure_time":"12:36"},{"id":"688278","pos":"TAMBO - NIETO-C5-CHICLAYO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Hipólito Unanue N° 409, Mz. D Lote 5 distrito y provincia de Chiclayo, departamento Lambayeque","distrito":"CHICLAYO","lat":-6.774223,"lon":-79.8293147,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":5.5,"arrival_time":"12:41","departure_time":"12:56"},{"id":"688277","pos":"TAMBO - PIMENTEL","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Carretera Pimentel-Chiclayo, Mz. 0654, Lt. 01 Dpto., Lote D Sintipo Sin Nombre 033, distrito y provincia de Chiclayo, departamento de Lambayeque,","distrito":"PIMENTEL","lat":-6.796813,"lon":-79.885587,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":16.1,"arrival_time":"14:12","departure_time":"14:27"}],"count":17,"travel_min":72.9,"total_min":327.9},{"day":2,"points":[{"id":"431214","pos":"PRIMAX - LISTO PACASMAYO","cadena":"COESTI S.A.C.","direccion":"Av. Leoncio Prado con calle Gonzalo Ugas","distrito":"CHICLAYO","lat":-7.3983976,"lon":-79.5676811,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO)","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"}],"count":1,"travel_min":0,"total_min":15}]},"CUSCO":{"total_pos":6,"total_days":1,"days":[{"day":1,"points":[{"id":"431204","pos":"PRIMAX - E/S OVALO","cadena":"COESTI S.A.C.","direccion":"MZ.D, SUB LOTE 5 - 6","distrito":"CUSCO","lat":-13.5315922,"lon":-71.9689404,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"710102","pos":"TAMBO - GRIFO-CULTURA-C7-CUSCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. del Ejercito N° alterno 1023 Mz. única, Urb. Residencial Cayma, distrito de Cayma, provincia y departamento de Arequipa,","distrito":"CUSCO","lat":-13.521931179239,"lon":-71.965410932536,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) + LADO VUSE (FRANJA)","travel_from_prev":2.7,"arrival_time":"08:17","departure_time":"08:32"},{"id":"690747","pos":"TAMBO - BASTIDAS-C3-CUSCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Micaela Bastidas N° 0327, Distrito de Wanchaq, Provincia y departamento de Cusco","distrito":"CUSCO","lat":-13.5234361,"lon":-71.9624234,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) + LADO VUSE (FRANJA)","travel_from_prev":0.9,"arrival_time":"08:33","departure_time":"08:48"},{"id":"710103","pos":"TAMBO - GRIFO-CULTURA-C16-CUSCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Alfredo Benavides Mz. A Lote 36 Urb. Vista Alegre, distrito de Santiago de Surco,","distrito":"CUSCO","lat":-13.525867511984,"lon":-71.952597334664,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) + LADO VUSE (FRANJA)","travel_from_prev":2.6,"arrival_time":"08:51","departure_time":"09:06"},{"id":"689080","pos":"TAMBO - MATARA-C3-CUSCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Matara Nº 346, distrito, provincia y departamento de Cusco,","distrito":"CUSCO","lat":-13.5216947,"lon":-71.9785848,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) + LADO VUSE (FRANJA)","travel_from_prev":6.8,"arrival_time":"09:13","departure_time":"09:28"},{"id":"705209","pos":"TAMBO - BEGONIAS CUSCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. 3 – Calle Las Begonias Mz. A4, Lote 1A, urbanización Ing. Larapa Grande, Distrito de San Jeronimo, provincia y departamento del Cusco","distrito":"CUSCO","lat":-13.537252,"lon":-71.905042,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) + LADO VUSE (FRANJA)","travel_from_prev":19.5,"arrival_time":"09:47","departure_time":"10:02"}],"count":6,"travel_min":32.5,"total_min":122.5}]},"PIURA":{"total_pos":28,"total_days":3,"days":[{"day":1,"points":[{"id":"431224","pos":"PRIMAX - E/S RIVERFRONT","cadena":"COESTI S.A.C.","direccion":"Malecón María Auxiliadora Lote 34, Urb. Miraflores, Castilla, Piura","distrito":"PIURA","lat":-5.183148,"lon":-80.6239704,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"431221","pos":"PRIMAX - E/S MEGA","cadena":"COESTI S.A.C.","direccion":"AV. PANAMERICANA Y COUNTRY S/N","distrito":"PIURA","lat":-5.1821574,"lon":-80.6309347,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG + NICHO + REEL (VELO NUEVO + VUSE NUEVO + ECLIPSE)","travel_from_prev":1.9,"arrival_time":"08:16","departure_time":"08:31"},{"id":"633206","pos":"TAMBO - COUNTRY-1 -PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Ca. 3 Mz. C, Lote 9 Urb. Angamos I Etapa , distrito, provincia y departamento de Piura","distrito":"PIURA","lat":-5.1843861,"lon":-80.6314897,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.6,"arrival_time":"08:32","departure_time":"08:47"},{"id":"515588","pos":"TAMBO - SANCHEZCERRO-C11-PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Sánchez Cerro N° 1136 Mz. G Lote 13A Piso 1, Urb. Club Grau, Distrito, Provincia y Departamento de Piura","distrito":"PIURA","lat":-5.1905456980121,"lon":-80.631215533152,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.6,"arrival_time":"08:49","departure_time":"09:04"},{"id":"431219","pos":"PRIMAX - E/S LUKAS","cadena":"COESTI S.A.C.","direccion":"AV. SANCHEZ CERRO 1120","distrito":"PIURA","lat":-5.1908937,"lon":-80.6308214,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.1,"arrival_time":"09:04","departure_time":"09:19"},{"id":"431227","pos":"AVA - PIURA","cadena":"GRIFO AVA","direccion":"AVENIDA SANCHEZ CERRO, CERCADO","distrito":"PIURA","lat":-5.1919419,"lon":-80.6293203,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA)","travel_from_prev":0.5,"arrival_time":"09:19","departure_time":"09:34"},{"id":"680421","pos":"TAMBO - LORETO-C5-PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Loreto N° 509, distrito, provincia y departamento de Piura.","distrito":"PIURA","lat":-5.1928206,"lon":-80.6289989,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.2,"arrival_time":"09:34","departure_time":"09:49"},{"id":"633205","pos":"TAMBO - GRAU-C5-PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Grau N° 526, Mz. A, Lote 04, distrito, provincia y departamento de Piura","distrito":"PIURA","lat":-5.1954542,"lon":-80.6304513,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"09:50","departure_time":"10:05"},{"id":"431222","pos":"PRIMAX - E/S OVALO GRAU","cadena":"COESTI S.A.C.","direccion":"AV. LORETO 779 -  PIURA","distrito":"PIURA","lat":-5.1961504,"lon":-80.629748,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.3,"arrival_time":"10:06","departure_time":"10:21"},{"id":"636684","pos":"TAMBO - CUSHING-C4-PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Richard Cushing Núm. 410 Mz. D, lote 10-A, Urb. 4 de enero, distrito, provincia y departamento de Piura","distrito":"PIURA","lat":-5.1956888,"lon":-80.6327834,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"10:21","departure_time":"10:36"},{"id":"431218","pos":"PRIMAX - E/S GRAU","cadena":"COESTI S.A.C.","direccion":"Av.Grau 1308","distrito":"PIURA","lat":-5.1936984,"lon":-80.6379318,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":1.5,"arrival_time":"10:38","departure_time":"10:53"},{"id":"431223","pos":"PRIMAX - E/S PERU","cadena":"COESTI S.A.C.","direccion":"Mz. 248, Lt. 1 A, Zona Industrial","distrito":"PIURA","lat":-5.1852919,"lon":-80.6461216,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":3.1,"arrival_time":"10:56","departure_time":"11:11"},{"id":"431220","pos":"PRIMAX - E/S MACARENA","cadena":"COESTI S.A.C.","direccion":"Zona Industrial, Mza. 235, Lotes 11-12","distrito":"PIURA","lat":-5.1835297,"lon":-80.6477048,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":0.6,"arrival_time":"11:12","departure_time":"11:27"},{"id":"691422","pos":"AVA - UCV PIURA","cadena":"GRIFO AVA","direccion":"ZONA INDUSTRIAL MZA. U LOTE. 9 TERCERA ETAPA - 26 DE OCTUBRE, PIURA, PIURA","distrito":"PIURA","lat":-5.1766349,"lon":-80.6626603,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA)","travel_from_prev":4.4,"arrival_time":"11:31","departure_time":"11:46"},{"id":"431216","pos":"PRIMAX - E/S DONALD","cadena":"COESTI S.A.C.","direccion":"Mz. N, Lts. 15 - 18","distrito":"PIURA","lat":-5.1653676,"lon":-80.6510653,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":4.3,"arrival_time":"11:50","departure_time":"12:05"},{"id":"617256","pos":"TAMBO - LAS PALMERAS","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Las Palmeras Mz. B, Lt. 17C, urb. San Eduardo distrito, provincia y departamento de Piura","distrito":"PIURA","lat":-5.1736203,"lon":-80.6307128,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":5.8,"arrival_time":"12:11","departure_time":"12:26"},{"id":"571361","pos":"TAMBO - TALLANES-PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Ex Fundo la Providencia TT-Call. Don Manuel Norte A 05 PIURA","distrito":"PIURA","lat":-5.1697010873144,"lon":-80.626683319662,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.5,"arrival_time":"12:27","departure_time":"12:42"},{"id":"691394","pos":"AVA - LOMA","cadena":"GRIFO AVA","direccion":"CAR. PIURA - LOS EJIDOS KM S/N","distrito":"PIURA","lat":-5.1606773,"lon":-80.6230598,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA)","travel_from_prev":2.6,"arrival_time":"12:45","departure_time":"13:00"},{"id":"431225","pos":"PRIMAX - LISTO EJIDOS","cadena":"COESTI S.A.C.","direccion":"Carretera. Canal Ejidos del Norte S/N Fundo. Ejidoz","distrito":"PIURA","lat":-5.1582627,"lon":-80.6221417,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.7,"arrival_time":"14:01","departure_time":"14:16"},{"id":"515589","pos":"TAMBO - GCIVIL C1","cadena":"TIENDAS TAMBO S.A.C.","direccion":"CRUCE AV. GUARDIA CIVIL CON CA JOSE OLAYA","distrito":"PIURA","lat":-5.193860918475,"lon":-80.621529139885,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":9.5,"arrival_time":"14:25","departure_time":"14:40"}],"count":20,"travel_min":40.8,"total_min":340.8},{"day":2,"points":[{"id":"431215","pos":"PRIMAX - E/S CASTILLA 1","cadena":"COESTI S.A.C.","direccion":"Av. Luis Montero S/N Urb. Miraflores","distrito":"PIURA","lat":-5.1975391,"lon":-80.6183963,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"626918","pos":"TAMBO - GCIVIL2-PIURA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AH PRIMAVERA I ETAPA AV. GUARDIA CIVIL MZ E-1 LT 1 distrito Castilla - Piura","distrito":"PIURA","lat":-5.1907111,"lon":-80.6055496,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":3.9,"arrival_time":"08:18","departure_time":"08:33"},{"id":"431217","pos":"PRIMAX - E/S GASCOP PIURA","cadena":"COESTI S.A.C.","direccion":"Mz. A, Lt. A-1 - Sector A, Parcela J, Z.I.","distrito":"PIURA","lat":-5.1723338,"lon":-80.6830056,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":21.2,"arrival_time":"08:55","departure_time":"09:10"},{"id":"431229","pos":"PRIMAX - E/S SULLANA","cadena":"COESTI S.A.C.","direccion":"AV. MARCELINO CHAMPAGNAT 1220 (FUNDO LA ESPERANZA, ESQUINA SUROESTE, CRUCE VÍA DE EVITAMIENTO Y PROLONG. AV. BOLOGNESI)","distrito":"PIURA","lat":-4.9095932,"lon":-80.6958381,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG + NICHO + REEL (VELO NUEVO + VUSE NUEVO + ECLIPSE)","travel_from_prev":70.2,"arrival_time":"10:20","departure_time":"10:35"},{"id":"431230","pos":"PRIMAX - LISTO OVALO SULLANA","cadena":"COESTI S.A.C.","direccion":"Av. Jose de Lama 1784 , Urb : Santa Rosa","distrito":"PIURA","lat":-4.9020844,"lon":-80.6981766,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":2.1,"arrival_time":"10:37","departure_time":"10:52"},{"id":"431231","pos":"PRIMAX - LISTO SAN MIGUEL SULLANA","cadena":"COESTI S.A.C.","direccion":"AV. JOSE DE LAMA 1150 , URB : SANTA ROSA","distrito":"SULLANA","lat":-4.9002838,"lon":-80.6952092,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG + NICHO + REEL (VELO NUEVO + VUSE NUEVO + ECLIPSE)","travel_from_prev":0.9,"arrival_time":"10:53","departure_time":"11:08"},{"id":"691393","pos":"AVA - COLAN","cadena":"GRIFO AVA","direccion":"COLAN PAITA PIURA","distrito":"COLAN","lat":-5.0078435,"lon":-81.0430985,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA)","travel_from_prev":96.8,"arrival_time":"12:45","departure_time":"13:00"}],"count":7,"travel_min":195.1,"total_min":300.1},{"day":3,"points":[{"id":"431232","pos":"PRIMAX - E/S TALARA","cadena":"COESTI S.A.C.","direccion":"AV. B CON B S/N","distrito":"PIURA","lat":-4.5765119,"lon":-81.2665618,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG + NICHO + REEL (VELO NUEVO + VUSE NUEVO + ECLIPSE)","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"}],"count":1,"travel_min":0,"total_min":15}]},"TRUJILLO":{"total_pos":41,"total_days":3,"days":[{"day":1,"points":[{"id":"431240","pos":"PRIMAX - E/S SANTA AMALIA","cadena":"COESTI S.A.C.","direccion":"AV. LA MARINA Y CARRETERA INDUSTRIAL KM. 559, MOCHE, TRUJILLO","distrito":"TRUJILLO","lat":-8.1306067,"lon":-79.0200591,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"431237","pos":"PRIMAX - E/S LA PERLA","cadena":"COESTI S.A.C.","direccion":"Av. América Sur 2677 - 2685","distrito":"TRUJILLO","lat":-8.1248326,"lon":-79.0251282,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":2.0,"arrival_time":"08:17","departure_time":"08:32"},{"id":"633077","pos":"TAMBO - AMERICASUR-C23-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. América del Sur N° 2321, Urb. Santa María I Etapa, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1231345,"lon":-79.0224832,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"08:32","departure_time":"08:47"},{"id":"703237","pos":"TAMBO - 29DEDICIEMBRE-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. 29 de diciembre Mz. B Lote 07, Urb. Santa Olga, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.119922,"lon":-79.0284825,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.8,"arrival_time":"08:49","departure_time":"09:04"},{"id":"431235","pos":"PRIMAX - E/S ESPAÑA 1","cadena":"COESTI S.A.C.","direccion":"AV. ESPAÑA 2625 CON AV. 28 DE JULIO","distrito":"TRUJILLO","lat":-8.1166471,"lon":-79.0291597,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.9,"arrival_time":"09:05","departure_time":"09:20"},{"id":"617257","pos":"TAMBO-BOLOGNESI-C5-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"calle Francisco Bolognesi N° 588, urb. Cercado, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1145118,"lon":-79.0286698,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.6,"arrival_time":"09:21","departure_time":"09:36"},{"id":"710995","pos":"TAMBO - ORBEGOSO C1 TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jr. Jose Luis De Orbegoso N° 190, Cercado, Trujillo, La Libertad","distrito":"TRUJILLO","lat":-8.1091112039944,"lon":-79.030425994908,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.5,"arrival_time":"09:37","departure_time":"09:52"},{"id":"709641","pos":"TAMBO - MANSICHE C2 TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Mansiche Nº 293 – 299, Urb. San Nicolás, distrito y provincia de Trujillo, departamento de la Libertad","distrito":"TRUJILLO","lat":-8.1095783,"lon":-79.0325458,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.6,"arrival_time":"09:53","departure_time":"10:08"},{"id":"651910","pos":"TAMBO - MUNIZ-C2-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Pedro Muñiz N° 253, sec. Mansiche, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1099402,"lon":-79.0339792,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.4,"arrival_time":"10:08","departure_time":"10:23"},{"id":"626919","pos":"TAMBO - JESUSDENAZARETH - C4","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. DE NAZARETH JESUS MZ Q LT 101, CH LUIS ALBRECHT","distrito":"TRUJILLO","lat":-8.1119303,"lon":-79.0349964,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.6,"arrival_time":"10:24","departure_time":"10:39"},{"id":"691810","pos":"TAMBO - AMERICASUR-C44-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. América Sur No 4472 Mz. I Lote 29 - No 4478 Mz. I Lote 30, Urb. San Andrés, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1200181,"lon":-79.0400759,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.5,"arrival_time":"10:41","departure_time":"10:56"},{"id":"431238","pos":"PRIMAX - E/S LARCO","cadena":"COESTI S.A.C.","direccion":"AV LARCO 1132   PRIMAX","distrito":"TRUJILLO","lat":-8.1245489,"lon":-79.0393759,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG + NICHO + REEL (VELO NUEVO + VUSE NUEVO + ECLIPSE)","travel_from_prev":1.2,"arrival_time":"10:57","departure_time":"11:12"},{"id":"640844","pos":"TAMBO - LARCO-C11-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Larco Herrera, Victor, urb. La Merced, III Etapa, Mz. N, Lt. 02, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1252667,"lon":-79.0387583,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.3,"arrival_time":"11:13","departure_time":"11:28"},{"id":"616777","pos":"TAMBO - HUSARES DE JUNIN-C12-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Húsares de Junín N° 1210, Urbanización III Etapa, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1273609,"lon":-79.0365003,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"11:28","departure_time":"11:43"},{"id":"691812","pos":"TAMBO - VALLEJO-C9","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Cesar Vallejo Oeste N° 903-905, calle A, Mz. A, Lote 7, urb. Ingeniería I, distrito y provincia de Trujillo y departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1282645,"lon":-79.0305374,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.6,"arrival_time":"11:45","departure_time":"12:00"},{"id":"705752","pos":"AVA - FLORES DEL GOLF","cadena":"GRIFO AVA","direccion":"MZ C LOTE 1, URB. LAS FLORES DEL GOLF   II ETAPA","distrito":"VICTOR LARCO HERRERA","lat":-8.1350515,"lon":-79.0364329,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA)","travel_from_prev":2.4,"arrival_time":"12:02","departure_time":"12:17"},{"id":"647077","pos":"TAMBO - LOSANGELES TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Los Angeles Mz. C, Lt. 44, urb. Las Hortencias de California, distrito de Víctor Larco Herrera, provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1357149,"lon":-79.0388318,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.7,"arrival_time":"12:18","departure_time":"12:33"},{"id":"637504","pos":"TAMBO - GANOZA - C6 - TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV GUUILLERMO GANOZA VARGAS N°650","distrito":"TRUJILLO","lat":-8.137564,"lon":-79.034227,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.3,"arrival_time":"12:34","departure_time":"12:49"},{"id":"709644","pos":"TAMBO - LARCO-C17-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Víctor Larco Herrera Nº 1703-1707, urbanización Santa Isabel, distrito de Víctor Larco Herrera, provincia de Trujillo, departamento La Libertad","distrito":"TRUJILLO","lat":-8.1292861,"lon":-79.0426614,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":3.1,"arrival_time":"12:53","departure_time":"13:08"},{"id":"431244","pos":"PRIMAX - LISTO CALIFORNIA","cadena":"COESTI S.A.C.","direccion":"AV VICTOR LARCO 1224   PRIMAX","distrito":"TRUJILLO","lat":-8.1338999,"lon":-79.046505,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":1.6,"arrival_time":"14:09","departure_time":"14:24"}],"count":20,"travel_min":24.7,"total_min":324.7},{"day":2,"points":[{"id":"703235","pos":"TAMBO - AMERICAOESTE-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. América Oeste Lote 2, Urb. Natasha Alta, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1134045,"lon":-79.047704,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"626920","pos":"TAMBO - JESUSDENAZARETH - C13","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. DE NAZARETH JESUS MZ U LT 01 SECTOR NATASHA ALTA, URB CORTIJO","distrito":"TRUJILLO","lat":-8.1080095,"lon":-79.0438392,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.8,"arrival_time":"08:16","departure_time":"08:31"},{"id":"431211","pos":"REPSOL - PRIMAVERA","cadena":"REPSOL COMERCIAL SAC","direccion":"AV. NICOLAS DE PIEROLA 800 820 MZA. A-3 URB. PRIMAVERA","distrito":"TRUJILLO","lat":-8.1009261,"lon":-79.0360197,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) | FACING 3K: CAMBIAR FACING NUEVO 3K | 8MG FACING Y NICHO: CAMBIAR FACING IZQUIERDA VELO 8MG","travel_from_prev":2.8,"arrival_time":"08:34","departure_time":"08:49"},{"id":"431245","pos":"PRIMAX - LISTO MOCHICA","cadena":"COESTI S.A.C.","direccion":"Av. Nicolas de Pierola 1390","distrito":"TRUJILLO","lat":-8.0951379,"lon":-79.0384918,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":1.7,"arrival_time":"08:51","departure_time":"09:06"},{"id":"431233","pos":"PRIMAX - E/S AMERICA NORTE 1","cadena":"COESTI S.A.C.","direccion":"AV. AMÉRICA NORTE 1902 CON AV. TUPAC AMARU","distrito":"TRUJILLO","lat":-8.0974401,"lon":-79.030079,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":2.3,"arrival_time":"09:08","departure_time":"09:23"},{"id":"600348","pos":"TAMBO - MANUELVERA-C4-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av Vera Enriquez Manuel 471 , Urb. Las Quintanas, distrito y provincia de Trujillo,","distrito":"TRUJILLO","lat":-8.0979861,"lon":-79.0273611,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":0.7,"arrival_time":"09:24","departure_time":"09:39"},{"id":"680378","pos":"TAMBO - TUPACAMARU-C5-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Túpac Amaru N° 577 – 579 - 583, Urb. Las Quintanas, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.0950294,"lon":-79.0216133,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.7,"arrival_time":"09:41","departure_time":"09:56"},{"id":"431234","pos":"PRIMAX - E/S AMERICA NORTE 2","cadena":"COESTI S.A.C.","direccion":"Av. America Norte 1085 - Urb. Los Jardines","distrito":"TRUJILLO","lat":-8.0950267,"lon":-79.0216139,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.0,"arrival_time":"09:56","departure_time":"10:11"},{"id":"703236","pos":"TAMBO - AMERICANORTE-C4-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. América Norte No 498, urbanización Daniel Hoyle - distrito y provincia trujillo, departamento La Libertad.","distrito":"TRUJILLO","lat":-8.0974559,"lon":-79.0162076,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.6,"arrival_time":"10:12","departure_time":"10:27"},{"id":"616778","pos":"TAMBO - BLAS PASCAL  - TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Pascal Blas Lote 02 Urbanización La Noria, distrito y provincia de Trujillo, departamento de La Libertad.","distrito":"TRUJILLO","lat":-8.1031835,"lon":-79.0107594,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.1,"arrival_time":"10:29","departure_time":"10:44"},{"id":"431243","pos":"PRIMAX - E/S UNION 1","cadena":"COESTI S.A.C.","direccion":"Prolong. Unión 1914","distrito":"TRUJILLO","lat":-8.0939212,"lon":-79.0086482,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":2.5,"arrival_time":"10:47","departure_time":"11:02"},{"id":"647078","pos":"TAMBO - PIZARRO - C8 - TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jr. Francisco Pizarro N° 898, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1075395,"lon":-79.0242411,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":5.5,"arrival_time":"11:07","departure_time":"11:22"},{"id":"431236","pos":"PRIMAX - E/S ESPAÑA 2","cadena":"COESTI S.A.C.","direccion":"Av España con Jr. Mineria","distrito":"TRUJILLO","lat":-8.1052017,"lon":-79.0269183,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.9,"arrival_time":"11:23","departure_time":"11:38"},{"id":"640843","pos":"TAMBO - ATAHUALPA-C4-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jirón Atahualpa N° 410 - 416, Urb. Sec. Chicago, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1153192,"lon":-79.0220517,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":3.0,"arrival_time":"11:41","departure_time":"11:56"},{"id":"594105","pos":"TAMBO - PIZARRO-C3-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jr. De Almagro Diego N° 500, 516, 518, Urb. Cercado, distrito y provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.1153374,"lon":-79.0220569,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":0.0,"arrival_time":"11:56","departure_time":"12:11"},{"id":"431210","pos":"REPSOL - PANAMERICANA SUR","cadena":"REPSOL COMERCIAL SAC","direccion":"AV. LA MARINA NRO. 1170","distrito":"TRUJILLO","lat":-8.138686,"lon":-79.0156103,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED+FRANJA) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":6.5,"arrival_time":"12:18","departure_time":"12:33"},{"id":"600347","pos":"TAMBO - ALVEAR-C8-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jr. Carlos Maria de Alvear N° 801, Sector – Central B3, Mz. 10 distrito La Esperanza, Trujillo, departamento de La Libertad","distrito":"LA ESPERANZA","lat":-8.0831393,"lon":-79.0424771,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":16.4,"arrival_time":"12:49","departure_time":"13:04"},{"id":"633078","pos":"TAMBO - CONDORCANQUI-C2-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jr. José Gabriel Condorcanqui N° 2204, Lt. 34 A y Calle N, Sector Pueblo Libre B1 Mz. 25, distrito y provincia de Trujillo,","distrito":"TRUJILLO","lat":-8.0644311,"lon":-79.0512798,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":5.5,"arrival_time":"14:10","departure_time":"14:25"},{"id":"431239","pos":"PRIMAX - E/S LOS POSTES","cadena":"COESTI S.A.C.","direccion":"Av. Condorcanqui 2492","distrito":"TRUJILLO","lat":-8.0642831,"lon":-79.0511972,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0.0,"arrival_time":"14:25","departure_time":"14:40"},{"id":"431242","pos":"PRIMAX - E/S ULTRACOM HUANCHAQUITO","cadena":"COESTI S.A.C.","direccion":"MZ. A LOTE 1-A A.H. HUANCHAQUITO BAJO (KM. 2 CURVA HUANCHAQUITO)","distrito":"TRUJILLO","lat":-8.0961624,"lon":-79.107998,"ot":"DISPENSER 8MG: DISPENSER LADO VELO (PARED + FRANJA + FLAP) + LADO VUSE (STICKER DE PISO) | NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":17.3,"arrival_time":"14:57","departure_time":"15:12"}],"count":20,"travel_min":72.3,"total_min":372.3},{"day":3,"points":[{"id":"682126","pos":"TAMBO - RIVERA-C5-TRUJILLO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. La Rivera N° 530, Mz. 22 Lote 1, distrito de Huanchaco, provincia de Trujillo, departamento de La Libertad","distrito":"TRUJILLO","lat":-8.0810976,"lon":-79.1224849,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"}],"count":1,"travel_min":0,"total_min":15}]},"CHINCHA":{"total_pos":6,"total_days":1,"days":[{"day":1,"points":[{"id":"617251","pos":"PRIMAX - E/S ESTRELLA","cadena":"COESTI S.A.C.","direccion":"Av. Oscar R.Benavides 711 ( Chincha Alta)","distrito":"CHINCHA","lat":-13.4161752,"lon":-76.140457,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"637319","pos":"TAMBO - BENAVIDES-C7-CHINCHA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. OSCAR BENAVIDES NUM 771 CHINCHA ALTA","distrito":"CHINCHA","lat":-13.4161819,"lon":-76.1405277,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.0,"arrival_time":"08:15","departure_time":"08:30"},{"id":"690682","pos":"TAMBO - BENAVIDES-C5-CHINCHA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Mariscal Oscar R. Benavides Nº 507, distrito de Chincha Alta, provincia de Chincha, departamento de Ica","distrito":"CHINCHA","lat":-13.417018397917,"lon":-76.137937356639,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.7,"arrival_time":"08:30","departure_time":"08:45"},{"id":"590725","pos":"TAMBO - TUPACAMARU-CHINCHA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle Túpac Amaru 121, Zona Chincha Alta – Cercado, distrito de Chincha Alta, provincia de Chincha","distrito":"CHINCHA","lat":-13.4173273,"lon":-76.1368746,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":0.3,"arrival_time":"08:46","departure_time":"09:01"},{"id":"705220","pos":"TAMBO - 28DEJULIO-C2-CHINCHA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Calle 28 de Julio Nº 200, distrito de Chincha Alta, provincia de Chincha, departamento de Ica","distrito":"CHINCHA","lat":-13.416097,"lon":-76.13263,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":1.1,"arrival_time":"09:02","departure_time":"09:17"},{"id":"687664","pos":"TAMBO - PLAZADEARMAS-CHINCHA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"CALLE PLAZA DE ARMAS 572 - 564 CHINCHA ALTA - CHINCHA - ICA","distrito":"CHINCHA ALTA","lat":-13.4177784,"lon":-76.1320118,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.5,"arrival_time":"09:17","departure_time":"09:32"}],"count":6,"travel_min":2.6,"total_min":92.6}]},"UCAYALI":{"total_pos":1,"total_days":1,"days":[{"day":1,"points":[{"id":"617258","pos":"PRIMAX - E/S CONTINENTAL SELVA","cadena":"COESTI S.A.C.","direccion":"Av. Faustino Sanchez Carrion 1450","distrito":"UCAYALI","lat":-8.3718041,"lon":-74.5544041,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR REEL NUEVO VELO + NUEVO VUSE + ECLIPSE | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"}],"count":1,"travel_min":0,"total_min":15}]},"BARRANCA":{"total_pos":3,"total_days":1,"days":[{"day":1,"points":[{"id":"617247","pos":"PRIMAX - E/S SAN JOSE","cadena":"COESTI S.A.C.","direccion":"Carr. Panam. Norte Km. 196 (antes Intersección con Av. A)","distrito":"BARRANCA","lat":-10.7425913,"lon":-77.766976,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"707715","pos":"TAMBO - PLAZADEARMAS-BARRANCA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Plaza de Armas N° 136 distrito y provincia de Barranca","distrito":"BARRANCA","lat":-10.753785,"lon":-77.761211,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":3.3,"arrival_time":"08:18","departure_time":"08:33"},{"id":"633325","pos":"TAMBO - VIDAL-C6-BARRANCA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Francisco Vidal 653, Mz. H1, Lt. 0 Cercado Supe Pueblo, distrito de Supe, provincia de Barranca","distrito":"BARRANCA","lat":-10.7965332,"lon":-77.7147453,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":16.7,"arrival_time":"08:50","departure_time":"09:05"}],"count":3,"travel_min":20.0,"total_min":65.0}]},"PUCALLPA":{"total_pos":1,"total_days":1,"days":[{"day":1,"points":[{"id":"710009","pos":"PRIMAX - LISTO KUWAIT","cadena":"COESTI S.A.C.","direccion":"Av. Miraflores 1439","distrito":"PUCALLPA","lat":-8.3743224461831,"lon":-74.5682123342923,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K | NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL | 8MG FACING Y NICHO: CAMBIAR FACING VELO 8MG","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"}],"count":1,"travel_min":0,"total_min":15}]},"CHANCAY":{"total_pos":4,"total_days":1,"days":[{"day":1,"points":[{"id":"506262","pos":"REPSOL - CHANCAY 2","cadena":"REPSOL COMERCIAL SAC","direccion":"Car, Au. Panamericana Nte. Km. 82, Chancay 15131","distrito":"CHANCAY","lat":-11.5596898,"lon":-77.2659737,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"506263","pos":"TAMBO - BOLIVAR-C2-CHANCAY","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Simón Bolívar N° 201, Distrito de Chancay, Provincia de Huaral, Departamento de Lima.","distrito":"CHANCAY","lat":-11.562857,"lon":-77.2691672,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":1.2,"arrival_time":"08:16","departure_time":"08:31"},{"id":"710331","pos":"TAMBO - BOULEVARD CHANCAY","cadena":"TIENDAS TAMBO S.A.C.","direccion":"calle López de Zuñiga N° 399 - Interior 01 - distrito de Chancay, provincia de Huaral y departamento de Lima","distrito":"CHANCAY","lat":-11.565229950899,"lon":-77.269393222057,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.6,"arrival_time":"08:31","departure_time":"08:46"},{"id":"506261","pos":"REPSOL - CHANCAY","cadena":"REPSOL COMERCIAL SAC","direccion":"Km. 77.5, Car. Panamericana Norte, Chancay 15131","distrito":"CHANCAY","lat":-11.6004735,"lon":-77.2476485,"ot":"FACING 3K: CAMBIAR FACING NUEVO 3K","travel_from_prev":11.0,"arrival_time":"08:57","departure_time":"09:12"}],"count":4,"travel_min":12.8,"total_min":72.8}]},"HUARAL":{"total_pos":3,"total_days":1,"days":[{"day":1,"points":[{"id":"691444","pos":"TAMBO - CAHUAS-C6-HUARAL","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. CAHUAS HUARAL NRO . INT. 00 - -HUARAL - Huaral Lima","distrito":"HUARAL","lat":-11.4930829,"lon":-77.2044931,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"616680","pos":"TAMBO - HUARAL","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. LUIS COLAN 276","distrito":"HUARAL","lat":-11.4957686,"lon":-77.2073597,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":1.0,"arrival_time":"08:16","departure_time":"08:31"},{"id":"706160","pos":"TAMBO - HUAQUILLA-HUARAL","cadena":"TIENDAS TAMBO S.A.C.","direccion":"CALL 2 MZ E LT6 DE LA COOPERATIVA DE VIVIENDA LA HUAQUILLA DISTRITO Y PROVINCIA HUARAL DEPARTAMENTO DE LIMA","distrito":"HUARAL","lat":-11.499075,"lon":-77.207597,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.9,"arrival_time":"08:31","departure_time":"08:46"}],"count":3,"travel_min":1.9,"total_min":46.9}]},"CHIMBOTE":{"total_pos":5,"total_days":1,"days":[{"day":1,"points":[{"id":"680104","pos":"TAMBO - NUEVO-CHIMBOTE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Country Mz. F, Lote 58, Urb. Buenos Aires Zona 5A, distrito Nuevo Chimbote, provincia de Santa, departamento de Ancash","distrito":"CHIMBOTE","lat":-9.1218099,"lon":-78.5299138,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"710117","pos":"TAMBO - MARIATEGUI-NUEVOCHIMBOTE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Urb. Buenos Aires Zona 3c, Mz. M3, Lt. 33, Nuevo Chimbote provincia de santa Departamento de Ancash","distrito":"NUEVO CHIMBOTE","lat":-9.1263322513486,"lon":-78.521304607799,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":2.6,"arrival_time":"08:17","departure_time":"08:32"},{"id":"710115","pos":"TAMBO - PACIFICO - NUEVOCHIMBOTE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Urb. Las Casuarinas II Etapa Av. Pacífico Mz B1 Lote 08 - Nuevo Chimbote provincia de santa Departamento de Ancash","distrito":"NUEVO CHIMBOTE","lat":-9.128466,"lon":-78.519374,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0.8,"arrival_time":"08:33","departure_time":"08:48"},{"id":"709640","pos":"TAMBO - BALTA CHIMBOTE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Jr. José Balta, Mz. 58B, Lote 53, distrito de Chimbote, provincia de Santa y departamento de Ancash","distrito":"ANCASH","lat":-9.0750188645132,"lon":-78.587354051579,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":22.9,"arrival_time":"09:11","departure_time":"09:26"},{"id":"515587","pos":"TAMBO - HAYADELATORRE-C4-CHIMBOTE","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Av. Víctor Raúl Haya de la Torre N° 492, Mz. 14, Lt. 5, Chimbote, provincia de Santa y departamento de Ancash.","distrito":"CHIMBOTE","lat":-9.0753472303417,"lon":-78.593669375562,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":1.7,"arrival_time":"09:28","departure_time":"09:43"}],"count":5,"travel_min":28.0,"total_min":103.0}]},"HUACHO":{"total_pos":2,"total_days":1,"days":[{"day":1,"points":[{"id":"687730","pos":"TAMBO - PLAZADEARMAS-HUACHO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"JR SAN ROMAN 244 PLAZA DE ARMAS - HUACHO","distrito":"HUACHO","lat":-11.108544,"lon":-77.61076,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"616679","pos":"TAMBO - HUACHO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"AV. 28 DE JULIO NRO. 196","distrito":"HUACHO","lat":-11.1072214,"lon":-77.6061724,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":1.3,"arrival_time":"08:16","departure_time":"08:31"}],"count":2,"travel_min":1.3,"total_min":31.3}]},"PARACAS":{"total_pos":1,"total_days":1,"days":[{"day":1,"points":[{"id":"710097","pos":"TAMBO - PARACAS - ICA","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Avenida Las Américas, Mz. A, Lt. 06, AA.HH. Alan García Pérez, distrito de Paracas, provincia de Pisco y departamento de Ica","distrito":"PARACAS","lat":-13.833790552371,"lon":-76.249049356762,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"}],"count":1,"travel_min":0,"total_min":15}]},"PISCO":{"total_pos":2,"total_days":1,"days":[{"day":1,"points":[{"id":"710098","pos":"TAMBO - AVIACIÓN C3 PISCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"Sector 02, Grupo 24A, Mz. N, Lt. 05, distrito de Villa El Salvador, provincia y departamento de Lima","distrito":"PISCO","lat":-13.680351827168,"lon":-76.157610291051,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"637320","pos":"TAMBO - PROGRESO-C1-PISCO","cadena":"TIENDAS TAMBO S.A.C.","direccion":"CALLE PROGRESO N°ALTERNO 198 - MZ 19 LT 8 / SECTOR CERCADO DE PISCO - PISCO","distrito":"PISCO","lat":-13.7093662,"lon":-76.2034663,"ot":"NUEVO LEGAL: CAMBIAR PLACA DE VUSE 3K NUEVO LEGAL","travel_from_prev":14.2,"arrival_time":"08:29","departure_time":"08:44"}],"count":2,"travel_min":14.2,"total_min":44.2}]},"IQUITOS":{"total_pos":3,"total_days":1,"days":[{"day":1,"points":[{"id":"616675","pos":"PRIMAX - E/S LA MARINA SELVA","cadena":"COESTI S.A.C.","direccion":"Av La Marina 944","distrito":"IQUITOS","lat":-3.7313098,"lon":-73.2403839,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":0,"arrival_time":"08:00","departure_time":"08:15"},{"id":"616676","pos":"PRIMAX - E/S FANNING SELVA","cadena":"COESTI S.A.C.","direccion":"Jr Cesar Calvo de Araujo N°801","distrito":"IQUITOS","lat":-3.7471995,"lon":-73.2501761,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":5.0,"arrival_time":"08:20","departure_time":"08:35"},{"id":"616677","pos":"PRIMAX - E/S QUIÑONES SELVA","cadena":"COESTI S.A.C.","direccion":"Av. Abelardo Quiñones n°1480","distrito":"IQUITOS","lat":-3.765216,"lon":-73.2701604,"ot":"NUEVO LEGAL: CAMBIAR PLACA  IZQUIERDA A VUSE 3K NUEVO LEGAL","travel_from_prev":7.2,"arrival_time":"08:42","departure_time":"08:57"}],"count":3,"travel_min":12.2,"total_min":57.2}]}};
+
+const C=["#f97316","#2563eb","#7c3aed","#059669","#d97706","#db2777","#0891b2","#65a30d","#dc2626","#4f46e5"];
+const SC={visited:{lb:"✅ Visitado",bg:"#d1fae5",co:"#059669",st:"#6ee7b7",cl:"visited"},nogo:{lb:"❌ No se pudo",bg:"#fee2e2",co:"#dc2626",st:"#fca5a5",cl:"nogo"}};
+const cities=Object.keys(DATA);
+let acity=null,aday="all",map=null,mkrs={},lines=[];
+let visits=JSON.parse(localStorage.getItem("v8mg_vis")||"{}");
+let cid=null,cst=null,cph={};
+let lbph=[],lbi=0;
+
+const PROVINCE_MAP={
+  'AREQUIPA':'Arequipa','ICA':'Ica','CHINCHA':'Ica','PISCO':'Ica','PARACAS':'Ica',
+  'CHICLAYO':'Lambayeque','TRUJILLO':'La Libertad','CHIMBOTE':'Áncash',
+  'CUSCO':'Cusco','PIURA':'Piura','UCAYALI':'Ucayali','PUCALLPA':'Ucayali',
+  'BARRANCA':'Lima Provincias','CHANCAY':'Lima Provincias','HUARAL':'Lima Provincias','HUACHO':'Lima Provincias',
+  'IQUITOS':'Loreto'
+};
+const PROVINCES={};
+Object.entries(PROVINCE_MAP).forEach(([city,prov])=>{
+  if(!PROVINCES[prov])PROVINCES[prov]=[];
+  PROVINCES[prov].push(city);
+});
+let activeProvince=null;
+
+
+// IndexedDB for photos
+let db=null;
+(function initDB(){
+  const r=indexedDB.open("v8mg_photos",1);
+  r.onupgradeneeded=e=>e.target.result.createObjectStore("ph",{keyPath:"id"});
+  r.onsuccess=e=>db=e.target.result;
+})();
+function dbSave(id,photos){if(!db)return;const tx=db.transaction("ph","readwrite");tx.objectStore("ph").put({id,photos});}
+function dbGet(id){return new Promise(res=>{if(!db)return res([]);const tx=db.transaction("ph","readonly");const r=tx.objectStore("ph").get(id);r.onsuccess=()=>res(r.result?.photos||[]);r.onerror=()=>res([]);});}
+function dbDel(id){if(!db)return;const tx=db.transaction("ph","readwrite");tx.objectStore("ph").delete(id);}
+
+function fmt(m){const h=Math.floor(m/60),n=Math.round(m%60);return h>0?h+"h "+n+"m":n+"m";}
+function clr(d){return C[(d-1)%C.length];}
+function tod(){return new Date().toLocaleDateString("es-PE",{day:"2-digit",month:"2-digit",year:"numeric"});}
+function toast(msg,ok=true){const t=document.getElementById("toast");t.textContent=msg;t.style.background=ok?"#059669":"#dc2626";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
+function cts(){const v=Object.values(visits);return{tot:v.length,vis:v.filter(x=>x.s==="visited").length,ngo:v.filter(x=>x.s==="nogo").length};}
+function updH(){const c=cts();document.getElementById("hv").textContent=c.vis;document.getElementById("hn").textContent=c.ngo;document.getElementById("hpe").textContent=190-c.tot;const p=Math.round(c.vis/190*100);document.getElementById("hpf").style.width=p+"%";document.getElementById("hpp").textContent=p+"%";}
+updH();
+
+function bldCities(q=""){
+  const el=document.getElementById("cl");el.innerHTML="";
+  cities.filter(c=>c.toLowerCase().includes(q.toLowerCase())&&(!activeProvince||(PROVINCES[activeProvince]||[]).includes(c))).forEach(city=>{
+    const d=DATA[city],iso=d.days.some(x=>x.count===1);
+    const avg=d.days.reduce((s,x)=>s+x.total_min,0)/d.total_days;
+    const ap=d.days.flatMap(dy=>dy.points);
+    const cv=ap.filter(p=>visits[p.id]?.s==="visited").length,cn=ap.filter(p=>visits[p.id]?.s==="nogo").length;
+    const e=document.createElement("div");e.className="cc fi"+(city===acity?" act":"");
+    e.innerHTML=`<div class="cct"><div class="cn">${city}</div><div class="cdys">${d.total_days} DÍA${d.total_days>1?"S":""}</div></div>
+      <div class="cm"><span class="pill pp">${d.total_pos} POS</span><span class="pill pt">~${fmt(avg)}/día</span>
+      ${cv>0?`<span class="pill pv">✅ ${cv}</span>`:""}${cn>0?`<span class="pill pn">❌ ${cn}</span>`:""}
+      ${iso?'<span class="pill pi-c">⚠</span>':""}</div>`;
+    e.onclick=()=>selC(city);el.appendChild(e);
+  });
+}
+bldCities();
+document.getElementById("srch").addEventListener("input",e=>bldCities(e.target.value));
+
+function buildProvinceGrid(){
+  const grid=document.getElementById('prov-grid');
+  grid.innerHTML='';
+  Object.entries(PROVINCES).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([prov,pcities])=>{
+    const pos=pcities.reduce((s,c)=>s+(DATA[c]?.total_pos||0),0);
+    const days=pcities.reduce((s,c)=>s+(DATA[c]?.total_days||0),0);
+    const card=document.createElement('div');
+    card.className='pvcard'+(activeProvince===prov?' act':'');
+    card.innerHTML=`<div class="pvname">${prov}</div><div class="pvmeta"><b>${pos}</b> POS · <b>${days}</b> días</div>`;
+    card.onclick=()=>selectProvince(prov);
+    grid.appendChild(card);
+  });
+}
+
+function selectProvince(prov){
+  activeProvince=prov;
+  // Update banner
+  const banner=document.getElementById('prov-banner');
+  document.getElementById('pab-name').textContent='Departamento: '+prov;
+  banner.classList.add('vis');
+  // Hide province grid, show city list filtered
+  document.getElementById('prov-bar').style.display='none';
+  // Build filtered city list
+  bldCities('');
+  buildProvinceGrid();
+  // Show all province cities on map first
+  rMapProvince(prov);
+  // Auto select first city
+  const pcities=PROVINCES[prov]||[];
+  if(pcities.length>0 && DATA[pcities[0]]){
+    selC(pcities[0]);
+  }
+}
+
+function clearProvince(){
+  activeProvince=null;
+  document.getElementById('prov-banner').classList.remove('vis');
+  document.getElementById('prov-bar').style.display='';
+  acity=null;aday='all';
+  document.getElementById('ppl').classList.remove('vis');
+  document.getElementById('dp').classList.remove('vis');
+  document.getElementById('iov').classList.remove('vis');
+  clrMap();
+  map.setView([-9,-75],5);
+  bldCities('');
+  buildProvinceGrid();
+}
+
+function selC(city){acity=city;aday="all";bldCities(document.getElementById("srch").value);bldTabs(city);bldList(city,"all");rMap(city,"all");updI(city);}
+
+function bldTabs(city){
+  const panel=document.getElementById("dp"),tabs=document.getElementById("dts");
+  panel.classList.add("vis");tabs.innerHTML="";
+  const all=document.createElement("div");all.className="dt";
+  all.textContent="Todos";all.style.cssText=aday==="all"?"background:#f97316;border-color:#f97316;color:white;":"";
+  all.onclick=()=>{aday="all";bldTabs(city);bldList(city,"all");rMap(city,"all");};
+  tabs.appendChild(all);
+  DATA[city].days.forEach(d=>{
+    const c=clr(d.day),t=document.createElement("div");t.className="dt";
+    const dv=d.points.filter(p=>visits[p.id]?.s==="visited").length,dn=d.points.filter(p=>visits[p.id]?.s==="nogo").length;
+    let b="";if(dv>0)b+=` <b style="background:white;color:${c};border-radius:3px;padding:0 3px;font-size:9px">✅${dv}</b>`;
+    if(dn>0)b+=` <b style="background:white;color:#dc2626;border-radius:3px;padding:0 3px;font-size:9px">❌${dn}</b>`;
+    t.innerHTML=`Día ${d.day}${d.count===1?" ⚠":""}${b}`;
+    t.style.cssText=aday===d.day?`background:${c};border-color:${c};color:white;`:`border-color:${c}60;color:${c};`;
+    t.onclick=()=>{aday=d.day;bldTabs(city);bldList(city,d.day);rMap(city,d.day);};
+    tabs.appendChild(t);
+  });
+}
+
+async function bldList(city,df){
+  const panel=document.getElementById("ppl"),list=document.getElementById("pll");
+  panel.classList.add("vis");list.innerHTML="";
+  const days=df==="all"?DATA[city].days:DATA[city].days.filter(d=>d.day===df);
+  for(const day of days){
+    const c=clr(day.day),g=document.createElement("div");g.className="pdg fi";
+    const dv=day.points.filter(p=>visits[p.id]?.s==="visited").length,dn=day.points.filter(p=>visits[p.id]?.s==="nogo").length;
+    const lbl=document.createElement("div");lbl.className="pdl";lbl.style.cssText=`background:${c}18;`;
+    lbl.innerHTML=`<span class="pdt" style="color:${c}">DÍA ${day.day}</span>
+      <span class="pdc" style="border-color:${c}40;color:${c}">${day.count} POS</span>
+      <span class="pdc" style="border-color:${c}40;color:${c}">🚗 ${fmt(day.travel_min)}</span>
+      <span class="pdc" style="border-color:${c}40;color:${c}">⏱ ${fmt(day.total_min)}</span>
+      ${dv>0?`<span class="pdc" style="border-color:#a7f3d0;color:#059669">✅ ${dv}</span>`:""}
+      ${dn>0?`<span class="pdc" style="border-color:#fca5a5;color:#dc2626">❌ ${dn}</span>`:""}`;
+    g.appendChild(lbl);
+    if(day.count===1){const w=document.createElement("div");w.className="iw";w.innerHTML="⚠️ POS geográficamente aislado";g.appendChild(w);}
+    for(let i=0;i<day.points.length;i++){
+      const pt=day.points[i];
+      if(i>0&&pt.travel_from_prev>0){
+        const t=document.createElement("div");t.className="tc";
+        t.innerHTML=`<div class="tcl"></div><div class="tcb">🚗 ${pt.travel_from_prev} min</div><div class="tcl"></div>`;
+        g.appendChild(t);
+      }
+      const v=visits[pt.id],sc=v?SC[v.s]:null;
+      const phRaw=await dbGet(pt.id);
+      const phArr=phRaw&&typeof phRaw==='object'&&!Array.isArray(phRaw)?Object.values(phRaw).filter(Boolean):Array.isArray(phRaw)?phRaw.filter(Boolean):[];
+      const card=document.createElement('div');card.className='pc'+(v?' '+sc.cl:'');card.id='c'+pt.id;
+      const thtml=phArr.length>0?`<div class="pph">${phArr.map((s,x)=>`<img class="pthumb" src="${s}" onclick="openLB('${pt.id}',${x},event)" title="Ver foto ${x+1}">`).join('')}<span class="pphct">📷 ${phArr.length}</span></div>`:''
+      card.innerHTML=`<div class="ps" style="background:${v?sc.st:c};opacity:${v?1:.2}"></div>
+        <div class="ptop">
+          <div class="pnum" style="background:${c}">${i+1}</div>
+          <div class="pbody">
+            <div class="pname">${pt.pos}</div>
+            <div class="pchain">${pt.cadena}</div>
+            <div class="paddr">📍 ${pt.direccion}</div>
+            <div class="pot">📋 ${pt.ot}</div>
+            ${v?`<div style="margin-top:4px"><span class="vst ${v.s==="visited"?"vsv":"vsn"}">${sc.lb}</span></div>`:""}
+          </div>
+          <div class="pacts">
+            <button class="qb qbv${v?.s==="visited"?" on":""}" title="Visitado" onclick="qMark('${pt.id}','visited',event)">✅</button>
+            <button class="qb qbn${v?.s==="nogo"?" on":""}" title="No se pudo" onclick="qMark('${pt.id}','nogo',event)">❌</button>
+          </div>
+        </div>
+        <div class="ptm">
+          <div class="ptc"><span>🕐</span><span>Llegada</span><span class="ptv">${pt.arrival_time}</span></div>
+          <div class="ptc"><span>✅</span><span>Salida</span><span class="ptv">${pt.departure_time}</span></div>
+          ${i>0?`<div class="ptc"><span>🚗</span><span>Traslado</span><span class="ptv">${pt.travel_from_prev} min</span></div>`:`<div class="ptc"><span>🏁</span><span>Inicio jornada</span></div>`}
+        </div>
+        ${v?.c?`<div class="pcmt">💬 ${v.c}</div>`:""}
+        ${thtml}`;
+      card.querySelector(".pbody").onclick=()=>{if(mkrs[pt.id])mkrs[pt.id].openPopup();map&&map.setView([pt.lat,pt.lon],16);};
+      g.appendChild(card);
+    }
+    list.appendChild(g);
+  }
+}
+
+function updI(city){
+  const d=DATA[city],ap=d.days.flatMap(dy=>dy.points);
+  const cv=ap.filter(p=>visits[p.id]?.s==="visited").length,cn=ap.filter(p=>visits[p.id]?.s==="nogo").length;
+  document.getElementById("iocn").textContent=city;
+  document.getElementById("iopos").textContent=d.total_pos;
+  document.getElementById("iovis").textContent=cv+" / "+d.total_pos;
+  document.getElementById("iong").textContent=cn;
+  document.getElementById("iod").textContent=d.total_days;
+  const br=document.getElementById("iobr");br.innerHTML="";
+  d.days.forEach(day=>{
+    const c=clr(day.day),pct=Math.min(Math.round(day.total_min/420*100),100);
+    const dv=day.points.filter(p=>visits[p.id]?.s==="visited").length;
+    const r=document.createElement("div");r.className="iodr";
+    r.innerHTML=`<div class="iodot" style="background:${c}"></div>
+      <div class="iodt">Día ${day.day}: ${day.count} POS${dv>0?` <b style="color:#059669">✅${dv}</b>`:""}</div>
+      <div class="iodn" style="color:${c}">${fmt(day.total_min)}</div>`;
+    br.appendChild(r);
+    const bar=document.createElement("div");bar.className="iobar";
+    bar.innerHTML=`<div class="iobarf" style="width:${pct}%;background:${c}"></div>`;
+    br.appendChild(bar);
+  });
+  document.getElementById("iov").classList.add("vis");
+}
+
+// MAP
+map=L.map("map",{zoomControl:true,attributionControl:false}).setView([-9,-75],5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(map);
+function clrMap(){Object.values(mkrs).forEach(m=>map.removeLayer(m));lines.forEach(l=>map.removeLayer(l));mkrs={};lines=[];}
+function mkSvg(n,c,vs){
+  if(vs==="visited")return`<svg width="30" height="36" viewBox="0 0 30 36"><path d="M15 2C8.37 2 3 7.37 3 14c0 9 12 20 12 20s12-11 12-20C27 7.37 21.63 2 15 2z" fill="#059669" stroke="white" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,.3))"/><text x="15" y="17.5" text-anchor="middle" font-size="14" fill="white">✓</text></svg>`;
+  if(vs==="nogo")return`<svg width="30" height="36" viewBox="0 0 30 36"><path d="M15 2C8.37 2 3 7.37 3 14c0 9 12 20 12 20s12-11 12-20C27 7.37 21.63 2 15 2z" fill="#dc2626" stroke="white" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,.3))"/><text x="15" y="17.5" text-anchor="middle" font-size="14" fill="white">✕</text></svg>`;
+  return`<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="${c}" stroke="white" stroke-width="2.5" filter="drop-shadow(0 2px 3px rgba(0,0,0,.2))"/><text x="14" y="18.5" text-anchor="middle" font-family="Barlow Condensed,sans-serif" font-weight="800" font-size="${n<10?12:10}" fill="white">${n}</text></svg>`;
+}
+function popH(pt,day,i,c){
+  const v=visits[pt.id],sc=v?SC[v.s]:null;
+  return`<div class="ppbdg" style="background:${c}20;color:${c}">DÍA ${day.day} · #${i+1}</div>
+    <div class="ppnm">${pt.pos}</div><div class="ppch">${pt.cadena}</div>
+    <div class="pprow"><span>📍</span><span>${pt.direccion}</span></div>
+    <div class="pptm">
+      <div class="pptc"><span style="font-size:9px;color:#7a95b0">🕐</span><span class="pptv" style="color:${c};margin-left:4px">${pt.arrival_time}</span></div>
+      <div class="pptc"><span style="font-size:9px;color:#7a95b0">✅</span><span class="pptv" style="color:${c};margin-left:4px">${pt.departure_time}</span></div>
+      ${i>0?`<div class="pptc"><span style="font-size:9px;color:#7a95b0">🚗</span><span class="pptv" style="margin-left:4px">${pt.travel_from_prev}m</span></div>`:""}
+    </div>
+    <div class="ppot"><div class="ppotl">OT / Tarea</div><div class="ppott">${pt.ot}</div></div>
+    ${sc?`<div class="ppvst" style="background:${sc.bg};color:${sc.co}">${sc.lb}</div>`:""}
+    ${v?.c?`<div style="font-size:10px;color:#3a5070;margin-top:5px;padding:5px 7px;background:#fffbeb;border-radius:5px;border-left:2px solid #fde68a">💬 ${v.c}</div>`:""}
+    <button class="ppbtn" onclick="openM('${pt.id}')">📝 ${v?"Editar":"Registrar visita"}</button>`;
+}
+
+function rMapProvince(prov){
+  // Show all cities of this province on the map at once
+  clrMap();
+  const pcities=(PROVINCES[prov]||[]).filter(c=>DATA[c]);
+  const allPts=[];
+  let dayOffset=0;
+  pcities.forEach(city=>{
+    DATA[city].days.forEach(day=>{
+      const c=clr(day.day);
+      const coords=[];
+      day.points.forEach((pt,i)=>{
+        allPts.push([pt.lat,pt.lon]);coords.push([pt.lat,pt.lon]);
+        const v=visits[pt.id],svg=mkSvg(i+1,c,v?.s),iM=!!v;
+        const icon=L.divIcon({className:'',html:svg,iconSize:iM?[30,36]:[28,28],iconAnchor:iM?[15,34]:[14,14]});
+        const m=L.marker([pt.lat,pt.lon],{icon}).addTo(map);
+        m.bindPopup(popH(pt,day,i,c),{className:'lfp',maxWidth:320,offset:[0,-5]});
+        mkrs[pt.id]=m;
+      });
+      if(coords.length>1){const l=L.polyline(coords,{color:c,weight:2,opacity:.6,dashArray:'6,4'}).addTo(map);lines.push(l);}
+    });
+  });
+  if(allPts.length)map.fitBounds(L.latLngBounds(allPts),{padding:[40,40]});
+}
+
+function rMap(city,df){
+  clrMap();
+  const days=df==="all"?DATA[city].days:DATA[city].days.filter(d=>d.day===df),all=[];
+  days.forEach(day=>{
+    const c=clr(day.day),coords=[];
+    day.points.forEach((pt,i)=>{
+      all.push([pt.lat,pt.lon]);coords.push([pt.lat,pt.lon]);
+      const v=visits[pt.id],svg=mkSvg(i+1,c,v?.s),iM=!!v;
+      const icon=L.divIcon({className:"",html:svg,iconSize:iM?[30,36]:[28,28],iconAnchor:iM?[15,34]:[14,14]});
+      const m=L.marker([pt.lat,pt.lon],{icon}).addTo(map);
+      m.bindPopup(popH(pt,day,i,c),{className:"lfp",maxWidth:320,offset:[0,-5]});
+      mkrs[pt.id]=m;
+    });
+    if(coords.length>1){const l=L.polyline(coords,{color:c,weight:2.5,opacity:.7,dashArray:"6,4"}).addTo(map);lines.push(l);}
+  });
+  if(all.length)map.fitBounds(L.latLngBounds(all),{padding:[50,50]});
+}
+function refMkr(id){
+  for(const city of cities){for(const day of DATA[city].days){
+    const pt=day.points.find(p=>p.id===id);
+    if(pt){
+      const i=day.points.indexOf(pt),c=clr(day.day),v=visits[id];
+      if(mkrs[id])map.removeLayer(mkrs[id]);
+      const svg=mkSvg(i+1,c,v?.s),iM=!!v;
+      const icon=L.divIcon({className:"",html:svg,iconSize:iM?[30,36]:[28,28],iconAnchor:iM?[15,34]:[14,14]});
+      const m=L.marker([pt.lat,pt.lon],{icon}).addTo(map);
+      m.bindPopup(popH(pt,day,i,c),{className:"lfp",maxWidth:320,offset:[0,-5]});
+      mkrs[id]=m;return;
+    }
+  }}
+}
+
+function svVis(){localStorage.setItem("v8mg_vis",JSON.stringify(visits));}
+
+function qMark(id,st,e){
+  e.stopPropagation();
+  const v=visits[id];
+  if(v&&v.s===st){delete visits[id];dbDel(id);}
+  else visits[id]={s:st,c:v?.c||"",f:tod()};
+  svVis();refMkr(id);
+  if(acity){bldList(acity,aday);bldTabs(acity);updI(acity);}
+  bldCities(document.getElementById("srch").value);updH();
+  toast(visits[id]?SC[st].lb+" guardado":"Desmarcado");
+}
+
+function openM(id){
+  cid=id;cst=null;cph={};
+  let pi=null;
+  for(const city of cities){for(const day of DATA[city].days){const pt=day.points.find(p=>p.id===id);if(pt){pi={pt,city,day};break;}}if(pi)break;}
+  if(!pi)return;
+  const{pt,city,day}=pi,v=visits[id];
+  document.getElementById("mhtl").textContent=v?"Editar visita":"Registrar visita";
+  document.getElementById("mhsb").textContent=city+" · Día "+day.day;
+  document.getElementById("mpn").textContent=pt.pos;
+  document.getElementById("mps").textContent=pt.cadena+" · "+pt.distrito;
+  document.getElementById("fcmt").value=v?.c||"";
+  document.getElementById("srv").className="sbtn"+(v?.s==="visited"?" sv":"");
+  document.getElementById("srn").className="sbtn"+(v?.s==="nogo"?" sn":"");
+  cst=v?.s||null;
+  dbGet(id).then(ph=>{cph=ph&&typeof ph==="object"&&!Array.isArray(ph)?{...ph}:{};buildSlots();});
+  document.getElementById("mbg").classList.add("open");
+}
+function closeM(){document.getElementById("mbg").classList.remove("open");cid=null;cst=null;cph={};}
+function selSt(s){cst=cst===s?null:s;document.getElementById("srv").className="sbtn"+(cst==="visited"?" sv":"");document.getElementById("srn").className="sbtn"+(cst==="nogo"?" sn":"");}
+
+const SLOTS=[
+  {k:"d1",label:"DISPENSER 1",tag:"si aplica"},
+  {k:"d2",label:"DISPENSER 2",tag:"si aplica"},
+  {k:"d3",label:"DISPENSER 3",tag:"si aplica"},
+  {k:"cf",label:"CIGARRERA — FACING",tag:"si aplica"},
+  {k:"cn",label:"CIGARRERA — NICHO",tag:"si aplica"},
+  {k:"cr",label:"CIGARRERA — REELS",tag:"si aplica"},
+  {k:"cp",label:"CIGARRERA — PANORÁMICA",tag:"requerida"}
+];
+function compressImg(file,cb){
+  if(file.size>8*1024*1024){toast("Foto muy grande (máx 8MB)",false);return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement("canvas");
+      const MAX=1400;let w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      cv.width=w;cv.height=h;cv.getContext("2d").drawImage(img,0,0,w,h);
+      cb(cv.toDataURL("image/jpeg",0.82));
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+function buildSlots(){
+  const wrap=document.getElementById("photo-slots-wrap");
+  wrap.innerHTML="";
+  SLOTS.forEach((slot,idx)=>{
+    const hasPhoto=!!cph[slot.k];
+    const div=document.createElement("div");
+    div.className="pslot"+(hasPhoto?" has-photo":"");
+    div.id="slot-"+slot.k;
+    div.innerHTML=`
+      <div class="pslot-hdr" onclick="toggleSlot('${slot.k}')">
+        <div class="pslot-num">${idx+1}</div>
+        <div class="pslot-label">FOTO ${slot.label}</div>
+        <span class="pslot-tag ${hasPhoto?"tag-ok":"tag-opt"}">${hasPhoto?"✓ Subida":slot.tag}</span>
+        <span class="pslot-action">${hasPhoto?"📷":"+"}</span>
+      </div>
+      <div class="pslot-body" id="body-${slot.k}">
+        ${hasPhoto
+          ?`<div class="pslot-preview">
+              <img src="${cph[slot.k]}" onclick="openLBSlot('${slot.k}')" title="Ver foto completa">
+              <div class="pslot-overlay">
+                <span class="pslot-fname">FOTO ${slot.label}</span>
+                <button class="pslot-del" onclick="delSlotPhoto('${slot.k}',event)">✕ Eliminar</button>
+              </div>
+            </div>`
+          :`<div class="pslot-upload">
+              <input type="file" accept="image/*" onchange="uploadSlot('${slot.k}',this.files[0])">
+              <div class="pslot-upload-ico">📸</div>
+              <div class="pslot-upload-tx">Toca para subir foto</div>
+              <div class="pslot-upload-sb">Cámara o galería</div>
+            </div>`}
+      </div>`;
+    // Auto-open if has photo or if it's the first empty slot
+    if(hasPhoto)div.classList.add("open");
+    wrap.appendChild(div);
+  });
+  // Auto-open first empty slot
+  const firstEmpty=SLOTS.find(s=>!cph[s.k]);
+  if(firstEmpty){
+    const el=document.getElementById("slot-"+firstEmpty.k);
+    if(el&&!el.classList.contains("open"))el.classList.add("open");
+  }
+  updSummary();
+}
+function toggleSlot(k){
+  const el=document.getElementById("slot-"+k);
+  el.classList.toggle("open");
+}
+function uploadSlot(k,file){
+  if(!file)return;
+  compressImg(file,b64=>{
+    cph[k]=b64;
+    buildSlots();
+    // Keep the uploaded slot open
+    const el=document.getElementById("slot-"+k);
+    if(el){el.classList.add("open","has-photo");}
+  });
+}
+function delSlotPhoto(k,e){
+  e.stopPropagation();
+  delete cph[k];
+  buildSlots();
+}
+function openLBSlot(k){
+  const photos=SLOTS.map(s=>cph[s.k]).filter(Boolean);
+  const keys=SLOTS.map(s=>s.k).filter(k=>cph[k]);
+  const idx=keys.indexOf(k);
+  lbph=photos;lbi=Math.max(0,idx);showLB();
+}
+function updSummary(){
+  const n=Object.values(cph).filter(Boolean).length;
+  const sm=document.getElementById("photo-summary");
+  document.getElementById("ps-cnt").textContent=n;
+  sm.style.display=n>0?"flex":"none";
+}
+
+function openLBDirect(i){lbph=Object.values(cph).filter(Boolean);lbi=Math.min(i,lbph.length-1);showLB();}
+async function openLB(posId,i,e){
+  e.stopPropagation();
+  const raw=await dbGet(posId);
+  if(raw&&typeof raw==="object"&&!Array.isArray(raw)){lbph=Object.values(raw).filter(Boolean);}
+  else if(Array.isArray(raw)){lbph=raw.filter(Boolean);}
+  else{lbph=[];}
+  lbi=Math.min(i,Math.max(0,lbph.length-1));showLB();
+}
+function showLB(){document.getElementById("lbimg").src=lbph[lbi];document.getElementById("lbcnt").textContent=(lbi+1)+" / "+lbph.length;document.getElementById("lbx").classList.add("open");}
+function closeLB(){document.getElementById("lbx").classList.remove("open");}
+function lbNav(d){lbi=(lbi+d+lbph.length)%lbph.length;showLB();}
+document.getElementById("lbx").addEventListener("click",e=>{if(e.target.id==="lbx")closeLB();});
+
+async function saveV(){
+  if(!cst){toast("Selecciona un estado",false);return;}
+  const com=document.getElementById("fcmt").value.trim();
+  visits[cid]={s:cst,c:com,f:tod()};
+  svVis();await dbSave(cid,cph);
+  closeM();refMkr(cid);
+  if(acity){await bldList(acity,aday);bldTabs(acity);updI(acity);}
+  bldCities(document.getElementById("srch").value);updH();
+  const nph=Object.values(cph).filter(Boolean).length;toast(SC[cst].lb+" guardado"+(nph>0?" · "+nph+" foto"+(nph>1?"s":""):""));
+}
+document.getElementById("mbg").addEventListener("click",e=>{if(e.target.id==="mbg")closeM();});
+
+async function doExport(){
+  toast("Preparando Excel...");
+  const rows=[["Ciudad","Día","#","ID Store","POS","Cadena","Dirección","Distrito","OT","Llegada Prog.","Salida Prog.","Traslado (min)","Estado","Fecha","Comentario","Fotos"]];
+  for(const city of cities){
+    for(const day of DATA[city].days){
+      for(let i=0;i<day.points.length;i++){
+        const pt=day.points[i],v=visits[pt.id],ph=await dbGet(pt.id);
+        rows.push([city,day.day,i+1,pt.id,pt.pos,pt.cadena,pt.direccion,pt.distrito,pt.ot,
+          pt.arrival_time,pt.departure_time,pt.travel_from_prev,
+          v?SC[v.s].lb:"Pendiente",v?.f||"",v?.c||"",ph.length+" foto"+(ph.length!==1?"s":"")]);
+      }
+    }
+  }
+  // Try XLSX first, then CSV fallback
+  function doXLSX(){
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"]=[{wch:12},{wch:5},{wch:4},{wch:10},{wch:28},{wch:20},{wch:36},{wch:14},{wch:50},{wch:12},{wch:12},{wch:8},{wch:18},{wch:12},{wch:38},{wch:10}];
+    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,"Rutas VELO 8MG",ws);
+    const c=cts();
+    const sm=[["RESUMEN",""],["",""],["Total POS",190],["✅ Visitados",c.vis],["❌ No se pudo",c.ngo],["⏳ Pendientes",190-c.tot],["Avance",Math.round(c.vis/190*100)+"%"]];
+    const ws2=XLSX.utils.aoa_to_sheet(sm);ws2["!cols"]=[{wch:20},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,"Resumen",ws2);
+    XLSX.writeFile(wb,"Rutas_VELO_8MG_"+new Date().toISOString().slice(0,10)+".xlsx");
+    toast("✅ Excel descargado correctamente");
+  }
+  function doCSV(){
+    const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download="Rutas_VELO_8MG_"+new Date().toISOString().slice(0,10)+".csv";
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    toast("📥 Descargado como CSV");
+  }
+  try{
+    if(typeof XLSX!=="undefined"){doXLSX();}else{doCSV();}
+  }catch(err){
+    console.error(err);doCSV();
+  }
+}
+
+buildProvinceGrid();
+// Don't auto-select, wait for province selection
+</script>
+</body>
+</html>
