@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{--bg:#f5f7fa;--wh:#fff;--s1:#f0f4f9;--s2:#e4ecf5;--bd:#d0dce8;--bd2:#b8cede;--navy:#1a3260;--nv2:#223d78;--blue:#2563eb;--bl:#dbeafe;--acc:#f97316;--tx:#0f1e35;--t2:#3a5070;--t3:#7a95b0;--gr:#059669;--gl:#d1fae5;--re:#dc2626;--rl:#fee2e2;--ye:#d97706;--yl:#fef3c7;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -276,7 +277,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
   </div>
   <button class="bex" onclick="doExport()">
     <svg width="13" height="13" fill="white" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-    Exportar Excel
+    Excel + Links Drive
   </button>
 </header>
 <aside>
@@ -384,6 +385,16 @@ Object.entries(PROVINCE_MAP).forEach(([city,prov])=>{
   PROVINCES[prov].push(city);
 });
 let activeProvince=null;
+
+// ── Google Drive Upload ──
+const GDRIVE_URL = "https://script.google.com/macros/s/AKfycby4cPduL4UccFa5a6ii76x8j3rqpuTtvm1C5XXLvfC_PXtp6mtzZarPb0E2eUxqha-Xig/exec";
+const SLOT_LABELS_DRIVE = {
+  d1:"01_DISPENSER_1", d2:"02_DISPENSER_2", d3:"03_DISPENSER_3",
+  cf:"04_CIG_FACING",  cn:"05_CIG_NICHO",   cr:"06_CIG_REELS", cp:"07_CIG_PANORAMICA"
+};
+// Store Drive links: driveLinks[posId][slotKey] = url
+let driveLinks = JSON.parse(localStorage.getItem("v8mg_links")||"{}");
+function saveDriveLinks(){ localStorage.setItem("v8mg_links", JSON.stringify(driveLinks)); }
 
 
 // IndexedDB for photos
@@ -739,8 +750,11 @@ function buildSlots(){
           ?`<div class="pslot-preview">
               <img src="${cph[slot.k]}" onclick="openLBSlot('${slot.k}')" title="Ver foto completa">
               <div class="pslot-overlay">
-                <span class="pslot-fname">FOTO ${slot.label}</span>
-                <button class="pslot-del" onclick="delSlotPhoto('${slot.k}',event)">✕ Eliminar</button>
+                <span class="pslot-fname">${driveLinks[cid]&&driveLinks[cid][slot.k]?'☁️ En Drive':'💾 Local'}</span>
+                <div style="display:flex;gap:5px;align-items:center">
+                  ${driveLinks[cid]&&driveLinks[cid][slot.k]?`<a href="${driveLinks[cid][slot.k]}" target="_blank" style="background:rgba(255,255,255,.25);color:white;font-size:9px;padding:2px 7px;border-radius:4px;text-decoration:none;font-weight:700">Ver ↗</a>`:''}
+                  <button class="pslot-del" onclick="delSlotPhoto('${slot.k}',event)">✕</button>
+                </div>
               </div>
             </div>`
           :`<div class="pslot-upload">
@@ -768,17 +782,68 @@ function toggleSlot(k){
 }
 function uploadSlot(k,file){
   if(!file)return;
-  compressImg(file,b64=>{
+  compressImg(file, async b64=>{
+    // Save locally first (instant feedback)
     cph[k]=b64;
     buildSlots();
-    // Keep the uploaded slot open
     const el=document.getElementById("slot-"+k);
-    if(el){el.classList.add("open","has-photo");}
+    if(el) el.classList.add("open","has-photo");
+    // Then upload to Google Drive
+    if(cid){
+      let ptInfo=null;
+      for(const city of cities){for(const day of DATA[city].days){const pt=day.points.find(p=>p.id===cid);if(pt){ptInfo={pt,city,day};break;}}if(ptInfo)break;}
+      if(ptInfo){
+        const {pt,city}=ptInfo;
+        const fname=SLOT_LABELS_DRIVE[k]||k;
+        // Show uploading indicator on slot
+        const slotEl=document.getElementById("slot-"+k);
+        if(slotEl){
+          const ind=document.createElement("div");
+          ind.id="upload-ind-"+k;
+          ind.style.cssText="position:absolute;top:0;left:0;right:0;background:rgba(37,99,235,.85);color:white;font-size:10px;font-weight:600;padding:4px 8px;text-align:center;z-index:10";
+          ind.textContent="⬆️ Subiendo a Drive...";
+          slotEl.style.position="relative";
+          slotEl.appendChild(ind);
+        }
+        try{
+          const resp = await fetch(GDRIVE_URL, {
+            method:"POST",
+            body: JSON.stringify({
+              photo: b64,
+              filename: fname,
+              city: city,
+              pos: pt.pos.replace(/[^a-zA-Z0-9 ]/g,"_").substring(0,40),
+              slotKey: k,
+              posId: cid
+            })
+          });
+          const result = await resp.json();
+          if(result.url){
+            if(!driveLinks[cid]) driveLinks[cid]={};
+            driveLinks[cid][k]=result.url;
+            saveDriveLinks();
+            // Update indicator
+            const ind2=document.getElementById("upload-ind-"+k);
+            if(ind2){ind2.style.background="rgba(5,150,105,.85)";ind2.textContent="✅ Subido a Drive";setTimeout(()=>ind2.remove(),2500);}
+            toast("📸 Foto subida a Drive");
+          } else {
+            const ind2=document.getElementById("upload-ind-"+k);
+            if(ind2){ind2.style.background="rgba(220,38,38,.85)";ind2.textContent="⚠️ Error Drive - guardada local";setTimeout(()=>ind2.remove(),3000);}
+            toast("Foto guardada localmente (Drive no disponible)",false);
+          }
+        } catch(err){
+          const ind2=document.getElementById("upload-ind-"+k);
+          if(ind2){ind2.style.background="rgba(220,38,38,.85)";ind2.textContent="⚠️ Sin conexión - guardada local";setTimeout(()=>ind2.remove(),3000);}
+          toast("Sin conexión — foto guardada localmente",false);
+        }
+      }
+    }
   });
 }
 function delSlotPhoto(k,e){
   e.stopPropagation();
   delete cph[k];
+  if(cid && driveLinks[cid]) { delete driveLinks[cid][k]; saveDriveLinks(); }
   buildSlots();
 }
 function openLBSlot(k){
@@ -821,47 +886,172 @@ async function saveV(){
 document.getElementById("mbg").addEventListener("click",e=>{if(e.target.id==="mbg")closeM();});
 
 async function doExport(){
-  toast("Preparando Excel...");
-  const rows=[["Ciudad","Día","#","ID Store","POS","Cadena","Dirección","Distrito","OT","Llegada Prog.","Salida Prog.","Traslado (min)","Estado","Fecha","Comentario","Fotos"]];
+  toast("Preparando exportación...");
+
+  // ── Collect all data ──
+  const allRows = [];
+  const photosByPOS = {}; // {posId: {pos, cadena, ciudad, photos:{d1,d2,...}}}
+
   for(const city of cities){
     for(const day of DATA[city].days){
       for(let i=0;i<day.points.length;i++){
-        const pt=day.points[i],v=visits[pt.id],ph=await dbGet(pt.id);
-        rows.push([city,day.day,i+1,pt.id,pt.pos,pt.cadena,pt.direccion,pt.distrito,pt.ot,
-          pt.arrival_time,pt.departure_time,pt.travel_from_prev,
-          v?SC[v.s].lb:"Pendiente",v?.f||"",v?.c||"",ph.length+" foto"+(ph.length!==1?"s":"")]);
+        const pt=day.points[i];
+        const v=visits[pt.id];
+        const phRaw=await dbGet(pt.id);
+        const phObj=phRaw&&typeof phRaw==='object'&&!Array.isArray(phRaw)?phRaw:{};
+        const phCount=Object.values(phObj).filter(Boolean).length;
+        allRows.push({city,day:day.day,seq:i+1,pt,v,phObj,phCount});
+        if(phCount>0) photosByPOS[pt.id]={pos:pt.pos,cadena:pt.cadena,city,day:day.day,phObj};
       }
     }
   }
-  // Try XLSX first, then CSV fallback
-  function doXLSX(){
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"]=[{wch:12},{wch:5},{wch:4},{wch:10},{wch:28},{wch:20},{wch:36},{wch:14},{wch:50},{wch:12},{wch:12},{wch:8},{wch:18},{wch:12},{wch:38},{wch:10}];
-    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,"Rutas VELO 8MG",ws);
+
+  const filename = "Rutas_VELO_8MG_"+new Date().toISOString().slice(0,10);
+
+  // ── OPTION A: Excel with photos embedded ──
+  async function doExcelWithPhotos(){
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Data ──
+    const header = ["Ciudad","Día","#","ID Store","POS","Cadena","Dirección","Distrito","OT",
+      "Llegada Prog.","Salida Prog.","Traslado (min)","Estado","Fecha","Comentario",
+      "DISPENSER 1","DISPENSER 2","DISPENSER 3","CIG-FACING","CIG-NICHO","CIG-REELS","CIG-PANORÁMICA","Total Fotos"];
+    const slotKeys = ["d1","d2","d3","cf","cn","cr","cp"];
+    const rows = [header];
+    for(const r of allRows){
+      const posLinks = driveLinks[r.pt.id]||{};
+      const slotVals = slotKeys.map(k=>{
+        if(!r.phObj[k]) return '—';
+        return posLinks[k] ? posLinks[k] : '✓ Solo local';
+      });
+      rows.push([r.city,r.day,r.seq,r.pt.id,r.pt.pos,r.pt.cadena,r.pt.direccion,r.pt.distrito,r.pt.ot,
+        r.pt.arrival_time,r.pt.departure_time,r.pt.travel_from_prev,
+        r.v?SC[r.v.s].lb:"Pendiente",r.v?.f||"",r.v?.c||"",
+        ...slotVals, r.phCount]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"]=[{wch:12},{wch:5},{wch:4},{wch:10},{wch:28},{wch:20},{wch:36},{wch:14},{wch:50},
+      {wch:12},{wch:12},{wch:8},{wch:18},{wch:12},{wch:38},
+      {wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:15},{wch:8}];
+    XLSX.utils.book_append_sheet(wb,"Rutas",ws);
+
+    // ── Sheet 2: Fotos (one row per photo with base64 note) ──
+    const photoRows = [["Ciudad","Día","POS","ID Store","Tipo de Foto","Link Google Drive","Estado Visita"]];
+    const SLOT_LABELS = {d1:"DISPENSER 1",d2:"DISPENSER 2",d3:"DISPENSER 3",cf:"CIG-FACING",cn:"CIG-NICHO",cr:"CIG-REELS",cp:"CIG-PANORÁMICA"};
+    for(const [posId,info] of Object.entries(photosByPOS)){
+      const v=visits[posId];
+      const posLinks = driveLinks[posId]||{};
+      for(const [k,b64] of Object.entries(info.phObj)){
+        if(!b64) continue;
+        const link = posLinks[k] || "Sin link (solo local)";
+        photoRows.push([info.city, info.day, info.pos, posId, SLOT_LABELS[k]||k,
+          link, v?SC[v.s].lb:"Pendiente"]);
+      }
+    }
+    const ws2 = XLSX.utils.aoa_to_sheet(photoRows);
+    ws2["!cols"]=[{wch:12},{wch:5},{wch:28},{wch:10},{wch:18},{wch:28},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,"Fotos (resumen)",ws2);
+
+    // ── Sheet 3: Resumen ──
     const c=cts();
-    const sm=[["RESUMEN",""],["",""],["Total POS",190],["✅ Visitados",c.vis],["❌ No se pudo",c.ngo],["⏳ Pendientes",190-c.tot],["Avance",Math.round(c.vis/190*100)+"%"]];
-    const ws2=XLSX.utils.aoa_to_sheet(sm);ws2["!cols"]=[{wch:20},{wch:14}];
-    XLSX.utils.book_append_sheet(wb,"Resumen",ws2);
-    XLSX.writeFile(wb,"Rutas_VELO_8MG_"+new Date().toISOString().slice(0,10)+".xlsx");
-    toast("✅ Excel descargado correctamente");
+    const sm=[["RESUMEN",""],["",""],["Total POS",190],["✅ Visitados",c.vis],
+      ["❌ No se pudo",c.ngo],["⏳ Pendientes",190-c.tot],
+      ["Avance",Math.round(c.vis/190*100)+"%"],["",""],
+      ["POS con fotos",Object.keys(photosByPOS).length],
+      ["Total fotos",allRows.reduce((s,r)=>s+r.phCount,0)]];
+    const ws3=XLSX.utils.aoa_to_sheet(sm);ws3["!cols"]=[{wch:22},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,"Resumen",ws3);
+
+    XLSX.writeFile(wb, filename+".xlsx");
+    toast("✅ Excel descargado");
   }
-  function doCSV(){
-    const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+
+  // ── OPTION B: ZIP with photos organized by city/POS ──
+  async function doZipWithPhotos(){
+    // Use JSZip if available, otherwise just download photos individually
+    const SLOT_LABELS = {d1:"01_DISPENSER_1",d2:"02_DISPENSER_2",d3:"03_DISPENSER_3",
+      cf:"04_CIG_FACING",cn:"05_CIG_NICHO",cr:"06_CIG_REELS",cp:"07_CIG_PANORAMICA"};
+    
+    if(typeof JSZip !== 'undefined'){
+      const zip = new JSZip();
+      let photoCount = 0;
+
+      for(const [posId, info] of Object.entries(photosByPOS)){
+        const folderName = info.city.replace(/[^a-zA-Z0-9]/g,'_')
+          + '/' + info.pos.replace(/[^a-zA-Z0-9]/g,'_').substring(0,30);
+        for(const [k,b64] of Object.entries(info.phObj)){
+          if(!b64) continue;
+          const label = SLOT_LABELS[k]||k;
+          const fname = label+".jpg";
+          // Convert base64 to binary
+          const b64data = b64.split(',')[1];
+          zip.folder(folderName).file(fname, b64data, {base64:true});
+          photoCount++;
+        }
+      }
+
+      // Add a README
+      const readmeTxt = "FOTOS DE IMPLEMENTACIÓN - VELO 8MG\n"
+        + "Exportado: "+new Date().toLocaleString('es-PE')+"\n"
+        + "Total fotos: "+photoCount+"\n\n"
+        + "Estructura de carpetas:\n"
+        + "  CIUDAD / NOMBRE_TIENDA / TIPO_FOTO.jpg\n";
+      zip.file("LEEME.txt", readmeTxt);
+
+      const blob = await zip.generateAsync({type:"blob", compression:"DEFLATE"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href=url; a.download=filename+"_FOTOS.zip";
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+      toast("📦 ZIP con "+photoCount+" fotos descargado");
+    } else {
+      toast("Descargando fotos individualmente...", true);
+      // Fallback: download each photo
+      let count=0;
+      for(const [posId,info] of Object.entries(photosByPOS)){
+        for(const [k,b64] of Object.entries(info.phObj)){
+          if(!b64) continue;
+          const a=document.createElement('a');
+          a.href=b64;
+          a.download=info.city+"_"+info.pos.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20)+"_"+(SLOT_LABELS[k]||k)+".jpg";
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          count++;
+          await new Promise(r=>setTimeout(r,150));
+        }
+      }
+      toast("📷 "+count+" fotos descargadas");
+    }
+  }
+
+  // ── Run both ──
+  try{
+    if(typeof XLSX !== 'undefined') await doExcelWithPhotos();
+    else throw new Error('XLSX not loaded');
+  } catch(e){
+    // CSV fallback
+    const rows2 = [["Ciudad","Día","#","ID","POS","Cadena","Dirección","Estado","Fecha","Comentario","Total Fotos"]];
+    for(const r of allRows){
+      rows2.push([r.city,r.day,r.seq,r.pt.id,r.pt.pos,r.pt.cadena,r.pt.direccion,
+        r.v?SC[r.v.s].lb:"Pendiente",r.v?.f||"",r.v?.c||"",r.phCount]);
+    }
+    const csv=rows2.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
     const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
     const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");a.href=url;a.download="Rutas_VELO_8MG_"+new Date().toISOString().slice(0,10)+".csv";
+    const a=document.createElement('a');a.href=url;a.download=filename+".csv";
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-    toast("📥 Descargado como CSV");
+    toast("📥 CSV descargado");
   }
-  try{
-    if(typeof XLSX!=="undefined"){doXLSX();}else{doCSV();}
-  }catch(err){
-    console.error(err);doCSV();
+
+  // Notify about Drive links
+  const totalPhotos = allRows.reduce((s,r)=>s+r.phCount,0);
+  const totalLinks = Object.values(driveLinks).reduce((s,v)=>s+Object.values(v).filter(Boolean).length,0);
+  if(totalPhotos > 0 && totalLinks < totalPhotos){
+    const sinLink = totalPhotos - totalLinks;
+    setTimeout(()=>toast(`⚠️ ${sinLink} foto${sinLink>1?'s':''} sin link Drive (solo local)`, false), 1200);
   }
 }
-
 buildProvinceGrid();
-// Don't auto-select, wait for province selection
 </script>
 </body>
 </html>
