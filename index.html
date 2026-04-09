@@ -184,7 +184,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
 
 /* Province selector */
 .prov-bar{padding:12px 14px;border-bottom:1px solid var(--bd);background:var(--s1);flex-shrink:0;}
-.prov-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.prov-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:280px;overflow-y:auto;padding-right:2px;}
 .pvcard{border:1.5px solid var(--bd);border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s;background:var(--wh);}
 .pvcard:hover{border-color:var(--blue);background:#eff6ff;}
 .pvcard.act{border-color:var(--blue);background:#eff6ff;}
@@ -286,7 +286,8 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
     <input class="sr" id="srch" type="text" placeholder="Buscar ciudad...">
   </div>
   <div class="prov-bar" id="prov-bar">
-    <div class="sbl" style="margin-bottom:7px">Selecciona tu departamento</div>
+    <div class="sbl" style="margin-bottom:7px">Selecciona tu ciudad</div>
+    <input class="sr" id="city-srch-grid" type="text" placeholder="Buscar ciudad..." oninput="filterCityGrid(this.value)" style="margin-bottom:8px">
     <div class="prov-grid" id="prov-grid"></div>
   </div>
   <div class="cl" id="cl"></div>
@@ -406,7 +407,7 @@ updH();
 
 function bldCities(q=""){
   const el=document.getElementById("cl");el.innerHTML="";
-  cities.filter(c=>c.toLowerCase().includes(q.toLowerCase())&&(!activeProvince||(PROVINCES[activeProvince]||[]).includes(c))).forEach(city=>{
+  cities.filter(c=>c.toLowerCase().includes(q.toLowerCase())&&(!activeProvince||activeProvince===c)).forEach(city=>{
     const d=DATA[city],iso=d.days.some(x=>x.count===1);
     const avg=d.days.reduce((s,x)=>s+x.total_min,0)/d.total_days;
     const ap=d.days.flatMap(dy=>dy.points);
@@ -422,50 +423,56 @@ function bldCities(q=""){
 bldCities();
 document.getElementById("srch").addEventListener("input",e=>bldCities(e.target.value));
 
+function filterCityGrid(q){
+  document.querySelectorAll('#prov-grid .pvcard').forEach(card=>{
+    const name = card.querySelector('.pvname').textContent;
+    card.style.display = name.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
 function buildProvinceGrid(){
-  const grid=document.getElementById('prov-grid');
-  grid.innerHTML='';
-  Object.entries(PROVINCES).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([prov,pcities])=>{
-    const pos=pcities.reduce((s,c)=>s+(DATA[c]?.total_pos||0),0);
-    const days=pcities.reduce((s,c)=>s+(DATA[c]?.total_days||0),0);
-    const card=document.createElement('div');
-    card.className='pvcard'+(activeProvince===prov?' act':'');
-    card.innerHTML=`<div class="pvname">${prov}</div><div class="pvmeta"><b>${pos}</b> POS · <b>${days}</b> días</div>`;
-    card.onclick=()=>selectProvince(prov);
+  const grid = document.getElementById('prov-grid');
+  grid.innerHTML = '';
+  Object.keys(DATA).sort().forEach(city=>{
+    const d = DATA[city];
+    const allPts = d.days.flatMap(dy=>dy.points);
+    const cv = allPts.filter(p=>visits[p.id]?.s==='visited').length;
+    const cn = allPts.filter(p=>visits[p.id]?.s==='nogo').length;
+    const card = document.createElement('div');
+    card.className = 'pvcard' + (activeProvince===city ? ' act' : '');
+    card.innerHTML = '<div class="pvname">' + city + '</div>'
+      + '<div class="pvmeta"><b>' + d.total_pos + '</b> POS'
+      + ' &middot; <b>' + d.total_days + '</b> d&iacute;a' + (d.total_days>1?'s':'')
+      + (cv>0 ? ' &middot; <span style="color:#059669">&#x2705;' + cv + '</span>' : '')
+      + (cn>0 ? ' &middot; <span style="color:#dc2626">&#x274c;' + cn + '</span>' : '')
+      + '</div>';
+    card.onclick = ()=>selectProvince(city);
     grid.appendChild(card);
   });
 }
 
-function selectProvince(prov){
-  activeProvince=prov;
-  // Update banner
-  const banner=document.getElementById('prov-banner');
-  document.getElementById('pab-name').textContent='Departamento: '+prov;
-  banner.classList.add('vis');
-  // Hide province grid, show city list filtered
-  document.getElementById('prov-bar').style.display='none';
-  // Build filtered city list
+function selectProvince(city){
+  activeProvince = city;
+  document.getElementById('pab-name').textContent = 'Ciudad: ' + city;
+  document.getElementById('prov-banner').classList.add('vis');
+  document.getElementById('prov-bar').style.display = 'none';
   bldCities('');
   buildProvinceGrid();
-  // Show all province cities on map first
-  rMapProvince(prov);
-  // Auto select first city
-  const pcities=PROVINCES[prov]||[];
-  if(pcities.length>0 && DATA[pcities[0]]){
-    selC(pcities[0]);
-  }
+  selC(city);
 }
 
 function clearProvince(){
-  activeProvince=null;
+  activeProvince = null;
   document.getElementById('prov-banner').classList.remove('vis');
-  document.getElementById('prov-bar').style.display='';
-  acity=null;aday='all';
+  document.getElementById('prov-bar').style.display = '';
+  acity = null; aday = 'all';
   document.getElementById('ppl').classList.remove('vis');
   document.getElementById('dp').classList.remove('vis');
   document.getElementById('iov').classList.remove('vis');
   clrMap();
-  map.setView([-9,-75],5);
+  map.setView([-9,-75], 5);
+  const sg = document.getElementById('city-srch-grid');
+  if(sg) sg.value = '';
   bldCities('');
   buildProvinceGrid();
 }
