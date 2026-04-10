@@ -12,7 +12,7 @@
 <style>
 :root{--bg:#f5f7fa;--wh:#fff;--s1:#f0f4f9;--s2:#e4ecf5;--bd:#d0dce8;--bd2:#b8cede;--navy:#1a3260;--nv2:#223d78;--blue:#2563eb;--bl:#dbeafe;--acc:#f97316;--tx:#0f1e35;--t2:#3a5070;--t3:#7a95b0;--gr:#059669;--gl:#d1fae5;--re:#dc2626;--rl:#fee2e2;--ye:#d97706;--yl:#fef3c7;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:grid;grid-template-rows:56px 1fr;grid-template-columns:370px 1fr;overflow:hidden;}
+body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--tx);height:100vh;height:100dvh;display:grid;grid-template-rows:56px 1fr;grid-template-columns:370px 1fr;overflow:hidden;}
 header{grid-column:1/-1;background:linear-gradient(90deg,#1a3260,#223d78 60%,#1e4080);border-bottom:2px solid rgba(255,255,255,.1);display:flex;align-items:center;padding:0 18px;gap:12px;box-shadow:0 2px 12px rgba(26,50,96,.3);}
 .lw{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .li{width:34px;height:34px;background:linear-gradient(135deg,#f97316,#e8490e);border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(249,115,22,.4);}
@@ -32,7 +32,7 @@ header{grid-column:1/-1;background:linear-gradient(90deg,#1a3260,#223d78 60%,#1e
 .hpp{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;color:#6ee7b7;min-width:34px;}
 .bex{background:rgba(16,185,129,.25);border:1px solid rgba(16,185,129,.5);color:white;font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:11px;padding:6px 12px;border-radius:5px;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:5px;flex-shrink:0;transition:all .15s;}
 .bex:hover{background:rgba(16,185,129,.4);}
-aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;box-shadow:2px 0 8px rgba(0,0,0,.05);}
+aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;box-shadow:2px 0 8px rgba(0,0,0,.05);min-height:0;}
 .sbt{padding:14px;border-bottom:1px solid var(--bd);flex-shrink:0;}
 .sbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px;}
 .sr{width:100%;background:var(--s1);border:1.5px solid var(--bd);border-radius:7px;padding:8px 12px 8px 34px;color:var(--tx);font-size:12px;outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%237a95b0' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.868-3.834zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:11px center;}
@@ -104,7 +104,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
 .pphct{font-size:9px;color:var(--t3);padding:2px 4px;white-space:nowrap;align-self:center;}
 /* MAP */
 #map{width:100%;height:100%;}
-.mwrap{position:relative;overflow:hidden;}
+.mwrap{position:relative;overflow:hidden;min-height:0;}
 /* INFO */
 .iov{position:absolute;top:12px;right:12px;z-index:1000;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;min-width:220px;pointer-events:none;display:none;box-shadow:0 8px 24px rgba(0,0,0,.12);}
 .iov.vis{display:block;}
@@ -125,7 +125,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
 .pov .pr{color:var(--t3);margin-bottom:2px;display:flex;gap:5px;}
 .pov .pr span{color:var(--t2);font-weight:600;}
 /* MODAL */
-.mbg{position:fixed;inset:0;background:rgba(15,30,53,.45);backdrop-filter:blur(3px);z-index:2000;display:none;align-items:center;justify-content:center;}
+.mbg{position:fixed;inset:0;background:rgba(15,30,53,.45);backdrop-filter:blur(3px);z-index:2000;display:none;align-items:center;justify-content:center;touch-action:none;}
 .mbg.open{display:flex;}
 .mdl{background:var(--wh);border-radius:14px;width:440px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:mIn .2s ease;}
 @keyframes mIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
@@ -253,6 +253,175 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
 .ppbtn:hover{opacity:.9;}
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .fi{animation:fi .22s ease;}
+
+/* ══════════════════════════════════
+   RESPONSIVE — TABLET & MOBILE
+══════════════════════════════════ */
+
+/* ── Tablet (≤900px) ── */
+@media(max-width:900px){
+  body{grid-template-columns:300px 1fr;}
+  .hs{padding:4px 8px;}
+  .hsv{font-size:14px;}
+  .hsl{font-size:8px;}
+  .hpw{display:none;}
+}
+
+/* ── Mobile (≤640px) ── */
+@media(max-width:640px){
+  body{
+    grid-template-rows:56px auto 1fr;
+    grid-template-columns:1fr;
+    height:100dvh;
+    overflow:hidden;
+  }
+
+  /* Header — compact */
+  header{
+    padding:0 12px;
+    gap:8px;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+  }
+  .lt{font-size:16px;}
+  .li{width:28px;height:28px;}
+  .li svg{width:14px;height:14px;}
+  .hd{display:none;}
+  .hs-wrap{gap:0;overflow-x:auto;}
+  .hs{padding:3px 8px;min-width:fit-content;}
+  .hsv{font-size:13px;}
+  .hsl{font-size:7.5px;}
+  .hpw{display:none;}
+
+  /* Layout — full width sidebar on top, map below */
+  aside{
+    grid-column:1;
+    grid-row:2;
+    height:auto;
+    max-height:45vh;
+    border-right:none;
+    border-bottom:2px solid var(--bd);
+    flex-direction:column;
+  }
+
+  .map-wrap{
+    grid-column:1;
+    grid-row:3;
+    height:100%;
+  }
+
+  /* Province grid — 2 cols tighter */
+  .prov-grid{grid-template-columns:1fr 1fr;gap:5px;max-height:180px;}
+  .pvname{font-size:11px;}
+  .pvmeta{font-size:9px;}
+
+  /* City list smaller */
+  .cl{max-height:120px;}
+  .cn{font-size:12px;}
+
+  /* Day tabs scrollable */
+  .dts{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;}
+  .dts::-webkit-scrollbar{height:3px;}
+  .dts::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+
+  /* POS list */
+  .pp-panel{flex:1;min-height:0;}
+  .pname{font-size:11px;}
+  .pchain{font-size:9px;}
+  .paddr{font-size:9px;}
+  .pot{font-size:8.5px;}
+  .ptv{font-size:10px;}
+
+  /* Info overlay — smaller */
+  .iov{
+    top:8px;right:8px;
+    min-width:160px;
+    padding:10px 12px;
+    font-size:10px;
+  }
+  .iocn{font-size:15px;}
+
+  /* Params overlay — hidden on mobile (too small) */
+  .pov{display:none;}
+
+  /* Modal — full screen */
+  .mbg{align-items:flex-end;}
+  .mdl{
+    width:100%;
+    max-width:100%;
+    max-height:92dvh;
+    border-radius:18px 18px 0 0;
+  }
+  .mhdr{padding:12px 16px 10px;}
+  .mbody{padding:14px 16px;}
+  .mftr{padding:8px 16px 16px;}
+
+  /* Status buttons bigger touch targets */
+  .sbtn{padding:14px 10px;}
+  .sem{font-size:28px;}
+  .slb{font-size:13px;}
+
+  /* Photo slots easier to tap */
+  .pslot-hdr{padding:10px 14px;}
+  .pslot-upload{padding:18px;}
+  .pslot-upload-ico{font-size:30px;}
+  .pslot-upload-tx{font-size:12px;}
+
+  /* Quick mark buttons bigger */
+  .qb{width:38px;height:32px;font-size:14px;}
+
+  /* Banner */
+  .prov-active-banner{font-size:11px;padding:6px 12px;}
+
+  /* Lightbox nav buttons bigger */
+  .lbbtn{width:48px;height:48px;font-size:22px;}
+
+  /* Toast bottom center */
+  .toast{
+    left:50%;right:auto;
+    transform:translateX(-50%) translateY(60px);
+    white-space:nowrap;
+    bottom:16px;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+}
+
+/* ── Very small (≤380px) ── */
+@media(max-width:380px){
+  .hs-wrap{display:none;}
+  .lt{font-size:15px;}
+  header{justify-content:space-between;}
+}
+
+
+@media(max-width:640px){
+  .modal-drag-handle{display:block!important;}
+}
+
+/* Mobile bottom nav */
+.mob-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:500;
+  background:var(--wh);border-top:1px solid var(--bd);
+  padding:8px 0 max(8px,env(safe-area-inset-bottom));
+  box-shadow:0 -4px 12px rgba(0,0,0,.08);
+}
+.mob-nav-btns{display:flex;justify-content:space-around;align-items:center;}
+.mnb{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;padding:4px 16px;
+  color:var(--t3);transition:color .15s;
+}
+.mnb.active{color:var(--blue);}
+.mnb-icon{font-size:20px;line-height:1;}
+.mnb-label{font-size:9px;font-weight:600;letter-spacing:.3px;}
+@media(max-width:640px){
+  .mob-nav{display:block;}
+  /* Push content above bottom nav */
+  body{padding-bottom:60px;}
+  .mbg{padding-bottom:60px;}
+}
+
 </style>
 </head>
 <body>
@@ -316,6 +485,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
 <!-- MODAL -->
 <div class="mbg" id="mbg">
   <div class="mdl">
+    <div style="width:40px;height:4px;background:var(--bd2);border-radius:2px;margin:8px auto 0;display:none" class="modal-drag-handle"></div>
     <div class="mhdr">
       <div class="mhic" id="mhic">📋</div>
       <div class="mhtx"><div class="mhtl" id="mhtl">Registrar visita</div><div class="mhsb" id="mhsb">—</div></div>
@@ -1192,6 +1362,57 @@ async function doExport(){
   }
 }
 buildProvinceGrid();
+
+// Mobile view switcher
+function mobView(view){
+  const aside = document.querySelector('aside');
+  const mapWrap = document.querySelector('.mwrap');
+  const iov = document.getElementById('iov');
+  document.querySelectorAll('.mnb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mnb-'+view)?.classList.add('active');
+  if(view==='list'){
+    aside.style.display='flex';
+    mapWrap.style.display='none';
+  } else if(view==='map'){
+    aside.style.display='none';
+    mapWrap.style.display='block';
+    if(map) setTimeout(()=>map.invalidateSize(),100);
+  } else if(view==='stats'){
+    aside.style.display='none';
+    mapWrap.style.display='block';
+    if(map) setTimeout(()=>map.invalidateSize(),100);
+    iov.classList.add('vis');
+  }
+}
+// Init mobile view
+if(window.innerWidth<=640){
+  document.querySelector('.mwrap').style.display='none';
+}
+window.addEventListener('resize',()=>{
+  if(window.innerWidth>640){
+    document.querySelector('aside').style.display='';
+    document.querySelector('.mwrap').style.display='';
+  }
+});
+
 </script>
+
+<div class="mob-nav" id="mob-nav">
+  <div class="mob-nav-btns">
+    <button class="mnb active" id="mnb-list" onclick="mobView('list')">
+      <span class="mnb-icon">📋</span>
+      <span class="mnb-label">Lista</span>
+    </button>
+    <button class="mnb" id="mnb-map" onclick="mobView('map')">
+      <span class="mnb-icon">🗺️</span>
+      <span class="mnb-label">Mapa</span>
+    </button>
+    <button class="mnb" id="mnb-stats" onclick="mobView('stats')">
+      <span class="mnb-icon">📊</span>
+      <span class="mnb-label">Avance</span>
+    </button>
+  </div>
+</div>
+
 </body>
 </html>
