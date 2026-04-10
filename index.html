@@ -434,11 +434,21 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
     grid-row: 2;
     grid-column: 1;
     height: 100%;
+    max-height: 100%;
     border-right: none;
     overflow: hidden;
     display: flex;
     flex-direction: column;
   }
+  /* POS panel must fill remaining space */
+  .pp-panel {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pp-panel.vis { display: flex; flex-direction: column; }
+  #pll { flex: 1; }
 
   /* ── Map fills content area (hidden by default) ── */
   .map-wrap {
@@ -572,6 +582,13 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
   .hs-wrap { display: none; }
   header { justify-content: space-between; }
 }
+
+
+.maps-btn {
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.maps-btn:hover { background: var(--bl); }
 
 </style>
 </head>
@@ -920,6 +937,7 @@ async function bldList(city,df){
       const phArr=phRaw&&typeof phRaw==='object'&&!Array.isArray(phRaw)?Object.values(phRaw).filter(Boolean):Array.isArray(phRaw)?phRaw.filter(Boolean):[];
       const card=document.createElement('div');card.className='pc'+(v?' '+sc.cl:'');card.id='c'+pt.id;
       const thtml=phArr.length>0?`<div class="pph">${phArr.map((s,x)=>`<img class="pthumb" src="${s}" onclick="openLB('${pt.id}',${x},event)" title="Ver foto ${x+1}">`).join('')}<span class="pphct">📷 ${phArr.length}</span></div>`:''
+      const mapsUrl=`https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lon}&travelmode=driving`;
       card.innerHTML=`<div class="ps" style="background:${v?sc.st:c};opacity:${v?1:.2}"></div>
         <div class="ptop">
           <div class="pnum" style="background:${c}">${i+1}</div>
@@ -938,7 +956,10 @@ async function bldList(city,df){
         <div class="ptm">
           <div class="ptc"><span>🕐</span><span>Llegada</span><span class="ptv">${pt.arrival_time}</span></div>
           <div class="ptc"><span>✅</span><span>Salida</span><span class="ptv">${pt.departure_time}</span></div>
-          ${i>0?`<div class="ptc"><span>🚗</span><span>Traslado</span><span class="ptv">${pt.travel_from_prev} min</span></div>`:`<div class="ptc"><span>🏁</span><span>Inicio jornada</span></div>`}
+          ${i>0?`<div class="ptc"><span>🚗</span><span>Traslado</span><span class="ptv">${pt.travel_from_prev} min</span></div>`:`<div class="ptc"><span>🏁</span><span>Inicio</span></div>`}
+          <a class="ptc" href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;color:var(--blue);font-weight:600">
+            <span>🧭</span><span>Maps</span>
+          </a>
         </div>
         ${v?.c?`<div class="pcmt">💬 ${v.c}</div>`:""}
         ${thtml}`;
@@ -974,8 +995,19 @@ function updI(city){
 }
 
 // MAP
+// Briefly show map-wrap so Leaflet can measure dimensions
+const _mw = document.querySelector('.map-wrap');
+const _mwWasHidden = _mw && getComputedStyle(_mw).display === 'none';
+if(_mwWasHidden) _mw.style.display = 'block';
+
 map=L.map("map",{zoomControl:true,attributionControl:false}).setView([-9,-75],5);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  attribution:'© OpenStreetMap'
+}).addTo(map);
+
+// Re-hide if it was hidden (mobile)
+if(_mwWasHidden){ _mw.style.display = 'none'; }
 function clrMap(){Object.values(mkrs).forEach(m=>map.removeLayer(m));lines.forEach(l=>map.removeLayer(l));mkrs={};lines=[];}
 function mkSvg(n,c,vs){
   if(vs==="visited")return`<svg width="30" height="36" viewBox="0 0 30 36"><path d="M15 2C8.37 2 3 7.37 3 14c0 9 12 20 12 20s12-11 12-20C27 7.37 21.63 2 15 2z" fill="#059669" stroke="white" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,.3))"/><text x="15" y="17.5" text-anchor="middle" font-size="14" fill="white">✓</text></svg>`;
@@ -987,6 +1019,12 @@ function popH(pt,day,i,c){
   return`<div class="ppbdg" style="background:${c}20;color:${c}">DÍA ${day.day} · #${i+1}</div>
     <div class="ppnm">${pt.pos}</div><div class="ppch">${pt.cadena}</div>
     <div class="pprow"><span>📍</span><span>${pt.direccion}</span></div>
+    <div class="pprow" style="margin-top:4px">
+      <a href="https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lon}&travelmode=driving" target="_blank"
+         style="background:#1a73e8;color:white;font-size:10px;padding:4px 10px;border-radius:5px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+        🧭 Cómo llegar (Google Maps)
+      </a>
+    </div>
     <div class="pptm">
       <div class="pptc"><span style="font-size:9px;color:#7a95b0">🕐</span><span class="pptv" style="color:${c};margin-left:4px">${pt.arrival_time}</span></div>
       <div class="pptc"><span style="font-size:9px;color:#7a95b0">✅</span><span class="pptv" style="color:${c};margin-left:4px">${pt.departure_time}</span></div>
@@ -1532,7 +1570,16 @@ function mobTab(tab) {
     mapWrap.classList.add('mob-active');
     mapBtn.classList.add('on');
     listBtn.classList.remove('on');
-    if (map) setTimeout(() => map.invalidateSize(), 50);
+    // Force Leaflet to recalculate tiles after becoming visible
+    if (map) {
+      setTimeout(() => {
+        map.invalidateSize();
+        // Reload tiles if needed
+        map.eachLayer(layer => {
+          if (layer._url) layer.redraw();
+        });
+      }, 100);
+    }
   }
 }
 window.addEventListener('resize', () => {
