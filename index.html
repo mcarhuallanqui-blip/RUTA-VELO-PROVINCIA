@@ -275,10 +275,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
     <div class="hpb"><div class="hpf" id="hpf" style="width:0%"></div></div>
     <span class="hpp" id="hpp">0%</span>
   </div>
-  <button class="bex" onclick="doExport()">
-    <svg width="13" height="13" fill="white" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-    Excel + Links Drive
-  </button>
+
 </header>
 <aside>
   <div class="prov-active-banner" id="prov-banner"><div class="pab-label"><span>📍</span><span id="pab-name">—</span></div><button class="pab-clear" onclick="clearProvince()">✕ Ver todo</button></div>
@@ -312,6 +309,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
     <div class="pr">Horario: <span>08:00–17:00 · almuerzo 13:00–14:00</span></div>
     <div class="pr">Efectivo: <span>7h = 420 min · 15 min/POS · Máx 20 POS</span></div>
     <div class="pr">Velocidad: <span>25 km/h promedio ciudad</span></div>
+
   </div>
 </div>
 
@@ -387,7 +385,7 @@ Object.entries(PROVINCE_MAP).forEach(([city,prov])=>{
 let activeProvince=null;
 
 // ── Google Drive Upload ──
-const GDRIVE_URL = "https://script.google.com/macros/s/AKfycby4cPduL4UccFa5a6ii76x8j3rqpuTtvm1C5XXLvfC_PXtp6mtzZarPb0E2eUxqha-Xig/exec";
+const GDRIVE_URL = "https://script.google.com/macros/s/AKfycbzf-_zapWBUwh9oM25TE8sB4xIT9Fw5_wBldh2itmZTn-4L7eV78aKjgp7RaW4gE23R/exec";
 const SLOT_LABELS_DRIVE = {
   d1:"01_DISPENSER_1", d2:"02_DISPENSER_2", d3:"03_DISPENSER_3",
   cf:"04_CIG_FACING",  cn:"05_CIG_NICHO",   cr:"06_CIG_REELS", cp:"07_CIG_PANORAMICA"
@@ -439,6 +437,71 @@ function filterCityGrid(q){
     const name = card.querySelector('.pvname').textContent;
     card.style.display = name.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
   });
+}
+
+
+async function testDrive(){
+  const statusEl = document.getElementById("drive-status");
+  statusEl.textContent = "Probando...";
+  statusEl.style.color = "var(--t3)";
+  try {
+    const resp = await fetch(GDRIVE_URL, {method:"GET"});
+    const text = await resp.text();
+    let result;
+    try { result = JSON.parse(text); } catch(e){ result = {raw: text}; }
+    if(result.status === "ok"){
+      statusEl.textContent = "✅ Conectado";
+      statusEl.style.color = "#059669";
+      toast("✅ Script conectado — listo para subir fotos");
+    } else {
+      statusEl.textContent = "⚠️ "+text.substring(0,30);
+      statusEl.style.color = "#dc2626";
+      toast("Respuesta inesperada: "+text.substring(0,80), false);
+    }
+  } catch(err){
+    statusEl.textContent = "❌ Sin conexión";
+    statusEl.style.color = "#dc2626";
+    toast("Error de conexión: "+err.message, false);
+  }
+}
+
+// Retry uploading all local-only photos to Drive
+async function retryDriveUpload(){
+  let retried=0, success=0;
+  for(const city of cities){
+    for(const day of DATA[city].days){
+      for(const pt of day.points){
+        const phRaw = await dbGet(pt.id);
+        const phObj = phRaw&&typeof phRaw==="object"&&!Array.isArray(phRaw)?phRaw:{};
+        const links = driveLinks[pt.id]||{};
+        for(const [k,b64] of Object.entries(phObj)){
+          if(!b64 || links[k]) continue; // skip if no photo or already has link
+          retried++;
+          try{
+            const resp = await fetch(GDRIVE_URL,{
+              method:"POST",
+              body: JSON.stringify({
+                photo:b64, filename:SLOT_LABELS_DRIVE[k]||k,
+                city, pos:pt.pos.replace(/[^a-zA-Z0-9 ]/g,"_").substring(0,40),
+                slotKey:k, posId:pt.id
+              })
+            });
+            const result = await resp.json();
+            if(result.url||result.id){
+              if(!driveLinks[pt.id]) driveLinks[pt.id]={};
+              const fileId=result.id||(result.url.match(/[-\w]{25,}/)||[])[0];
+              driveLinks[pt.id][k]=fileId?"https://drive.google.com/file/d/"+fileId+"/view?usp=sharing":result.url;
+              saveDriveLinks();
+              success++;
+            }
+          } catch(e){ console.error("Retry error:",e); }
+          await new Promise(r=>setTimeout(r,300)); // small delay between uploads
+        }
+      }
+    }
+  }
+  toast(success>0?`✅ ${success} de ${retried} fotos subidas a Drive`:`No se pudieron subir a Drive`,success>0);
+  if(acity){await bldList(acity,aday);}
 }
 
 function buildProvinceGrid(){
@@ -682,6 +745,19 @@ function qMark(id,st,e){
   if(acity){bldList(acity,aday);bldTabs(acity);updI(acity);}
   bldCities(document.getElementById("srch").value);updH();
   toast(visits[id]?SC[st].lb+" guardado":"Desmarcado");
+  // Sync to Sheets in background
+  if(visits[id]){
+    let ptS=null;
+    for(const city of cities){for(const day of DATA[city].days){const pt=day.points.find(p=>p.id===id);if(pt){ptS={pt,city};break;}}if(ptS)break;}
+    if(ptS) fetch(GDRIVE_URL,{method:"POST",body:JSON.stringify({
+      type:"save_visit",posId:id,
+      pos:ptS.pt.pos.replace(/[^a-zA-Z0-9 ]/g,"_").substring(0,40),
+      city:ptS.city,
+      estado:SC[st].lb,
+      comentario:visits[id]?.c||"",
+      fecha:tod()
+    })}).catch(e=>console.log("Sheet sync:",e));
+  }
 }
 
 function openM(id){
@@ -783,60 +859,72 @@ function toggleSlot(k){
 function uploadSlot(k,file){
   if(!file)return;
   compressImg(file, async b64=>{
-    // Save locally first (instant feedback)
+    // 1. Save locally first
     cph[k]=b64;
     buildSlots();
     const el=document.getElementById("slot-"+k);
     if(el) el.classList.add("open","has-photo");
-    // Then upload to Google Drive
-    if(cid){
-      let ptInfo=null;
-      for(const city of cities){for(const day of DATA[city].days){const pt=day.points.find(p=>p.id===cid);if(pt){ptInfo={pt,city,day};break;}}if(ptInfo)break;}
-      if(ptInfo){
-        const {pt,city}=ptInfo;
-        const fname=SLOT_LABELS_DRIVE[k]||k;
-        // Show uploading indicator on slot
-        const slotEl=document.getElementById("slot-"+k);
-        if(slotEl){
-          const ind=document.createElement("div");
-          ind.id="upload-ind-"+k;
-          ind.style.cssText="position:absolute;top:0;left:0;right:0;background:rgba(37,99,235,.85);color:white;font-size:10px;font-weight:600;padding:4px 8px;text-align:center;z-index:10";
-          ind.textContent="⬆️ Subiendo a Drive...";
-          slotEl.style.position="relative";
-          slotEl.appendChild(ind);
-        }
-        try{
-          const resp = await fetch(GDRIVE_URL, {
-            method:"POST",
-            body: JSON.stringify({
-              photo: b64,
-              filename: fname,
-              city: city,
-              pos: pt.pos.replace(/[^a-zA-Z0-9 ]/g,"_").substring(0,40),
-              slotKey: k,
-              posId: cid
-            })
-          });
-          const result = await resp.json();
-          if(result.url){
-            if(!driveLinks[cid]) driveLinks[cid]={};
-            driveLinks[cid][k]=result.url;
-            saveDriveLinks();
-            // Update indicator
-            const ind2=document.getElementById("upload-ind-"+k);
-            if(ind2){ind2.style.background="rgba(5,150,105,.85)";ind2.textContent="✅ Subido a Drive";setTimeout(()=>ind2.remove(),2500);}
-            toast("📸 Foto subida a Drive");
-          } else {
-            const ind2=document.getElementById("upload-ind-"+k);
-            if(ind2){ind2.style.background="rgba(220,38,38,.85)";ind2.textContent="⚠️ Error Drive - guardada local";setTimeout(()=>ind2.remove(),3000);}
-            toast("Foto guardada localmente (Drive no disponible)",false);
-          }
-        } catch(err){
-          const ind2=document.getElementById("upload-ind-"+k);
-          if(ind2){ind2.style.background="rgba(220,38,38,.85)";ind2.textContent="⚠️ Sin conexión - guardada local";setTimeout(()=>ind2.remove(),3000);}
-          toast("Sin conexión — foto guardada localmente",false);
-        }
+
+    // 2. Find POS info
+    if(!cid) return;
+    let ptInfo=null;
+    for(const city of cities){
+      for(const day of DATA[city].days){
+        const pt=day.points.find(p=>p.id===cid);
+        if(pt){ptInfo={pt,city,day};break;}
       }
+      if(ptInfo)break;
+    }
+    if(!ptInfo) return;
+    const {pt,city}=ptInfo;
+
+    // 3. Show uploading indicator
+    const slotEl=document.getElementById("slot-"+k);
+    const ind=document.createElement("div");
+    ind.id="upload-ind-"+k;
+    ind.style.cssText="position:absolute;top:0;left:0;right:0;background:rgba(37,99,235,.9);color:white;font-size:10px;font-weight:600;padding:4px 8px;text-align:center;z-index:10;border-radius:0";
+    ind.textContent="⬆️ Subiendo foto a Drive...";
+    if(slotEl){slotEl.style.position="relative";slotEl.appendChild(ind);}
+
+    try{
+      // 4. Upload photo to Drive via Sheets script
+      const resp = await fetch(GDRIVE_URL, {
+        method:"POST",
+        body: JSON.stringify({
+          type: "save_photo",
+          photo: b64,
+          slotKey: k,
+          slotLabel: SLOT_LABELS_DRIVE[k]||k,
+          city: city,
+          pos: pt.pos.replace(/[^a-zA-Z0-9 ]/g,"_").substring(0,40),
+          posId: cid,
+          fecha: tod(),
+          estado: (visits[cid]&&SC[visits[cid].s])?SC[visits[cid].s].lb:"Pendiente",
+          comentario: (visits[cid]&&visits[cid].c)||""
+        })
+      });
+      const result = await resp.json();
+
+      if(result.url || result.id){
+        // Save link
+        if(!driveLinks[cid]) driveLinks[cid]={};
+        const fileId = result.id || (result.url&&result.url.match(/[-\w]{25,}/)||[])[0];
+        driveLinks[cid][k] = fileId
+          ? "https://drive.google.com/file/d/"+fileId+"/view?usp=sharing"
+          : result.url;
+        saveDriveLinks();
+        buildSlots();
+        const ind2=document.getElementById("upload-ind-"+k);
+        if(ind2){ind2.style.background="rgba(5,150,105,.9)";ind2.textContent="✅ Foto en Drive";setTimeout(()=>ind2.remove(),2500);}
+        toast("📸 Foto subida a Drive ✓");
+      } else {
+        throw new Error(result.error||JSON.stringify(result));
+      }
+    } catch(err){
+      console.error("Upload error:",err);
+      const ind2=document.getElementById("upload-ind-"+k);
+      if(ind2){ind2.style.background="rgba(220,38,38,.9)";ind2.textContent="⚠️ "+err.message.substring(0,50);setTimeout(()=>ind2.remove(),5000);}
+      toast("Error subiendo foto: "+err.message.substring(0,60),false);
     }
   });
 }
@@ -876,12 +964,37 @@ document.getElementById("lbx").addEventListener("click",e=>{if(e.target.id==="lb
 async function saveV(){
   if(!cst){toast("Selecciona un estado",false);return;}
   const com=document.getElementById("fcmt").value.trim();
-  visits[cid]={s:cst,c:com,f:tod()};
+  // Capture all values BEFORE closeM resets state
+  const savedId=cid, savedSt=cst, savedCom=com, savedFecha=tod();
+  const savedLabel=SC[cst].lb;
+  visits[cid]={s:cst,c:com,f:savedFecha};
   svVis();await dbSave(cid,cph);
-  closeM();refMkr(cid);
+  const nph=Object.values(cph).filter(Boolean).length;
+
+  closeM();refMkr(savedId);
   if(acity){await bldList(acity,aday);bldTabs(acity);updI(acity);}
   bldCities(document.getElementById("srch").value);updH();
-  const nph=Object.values(cph).filter(Boolean).length;toast(SC[cst].lb+" guardado"+(nph>0?" · "+nph+" foto"+(nph>1?"s":""):""));
+  toast(savedLabel+" guardado"+(nph>0?" · "+nph+" foto"+(nph>1?"s":""):""));
+
+  // Sync to Google Sheets with all data
+  let ptInfoSave=null;
+  for(const city of cities){for(const day of DATA[city].days){const pt=day.points.find(p=>p.id===savedId);if(pt){ptInfoSave={pt,city,day};break;}}if(ptInfoSave)break;}
+  if(ptInfoSave){
+    fetch(GDRIVE_URL,{
+      method:"POST",
+      body:JSON.stringify({
+        type:"save_visit",
+        posId:savedId,
+        pos:ptInfoSave.pt.pos.replace(/[^a-zA-Z0-9 ]/g,"_").substring(0,40),
+        city:ptInfoSave.city,
+        estado:savedLabel,
+        comentario:savedCom,
+        fecha:savedFecha
+      })
+    }).then(r=>r.json())
+      .then(res=>{if(res.saved)toast("📋 Guardado en Sheet ✓");})
+      .catch(e=>console.log("Sheet save error:",e));
+  }
 }
 document.getElementById("mbg").addEventListener("click",e=>{if(e.target.id==="mbg")closeM();});
 
@@ -922,7 +1035,11 @@ async function doExport(){
       const posLinks = driveLinks[r.pt.id]||{};
       const slotVals = slotKeys.map(k=>{
         if(!r.phObj[k]) return '—';
-        return posLinks[k] ? posLinks[k] : '✓ Solo local';
+        if(posLinks[k]){
+          // Return the URL directly - Excel will show as link
+          return posLinks[k];
+        }
+        return '✓ Solo local (sin Drive)';
       });
       rows.push([r.city,r.day,r.seq,r.pt.id,r.pt.pos,r.pt.cadena,r.pt.direccion,r.pt.distrito,r.pt.ot,
         r.pt.arrival_time,r.pt.departure_time,r.pt.travel_from_prev,
@@ -943,13 +1060,21 @@ async function doExport(){
       const posLinks = driveLinks[posId]||{};
       for(const [k,b64] of Object.entries(info.phObj)){
         if(!b64) continue;
-        const link = posLinks[k] || "Sin link (solo local)";
+        const link = posLinks[k] || "Sin link Drive (foto guardada localmente)";
         photoRows.push([info.city, info.day, info.pos, posId, SLOT_LABELS[k]||k,
           link, v?SC[v.s].lb:"Pendiente"]);
       }
     }
     const ws2 = XLSX.utils.aoa_to_sheet(photoRows);
-    ws2["!cols"]=[{wch:12},{wch:5},{wch:28},{wch:10},{wch:18},{wch:28},{wch:18}];
+    ws2["!cols"]=[{wch:12},{wch:5},{wch:28},{wch:10},{wch:18},{wch:45},{wch:18}];
+    // Make Drive links clickable in Excel
+    Object.keys(ws2).filter(k=>k[0]!=='!').forEach(cellAddr=>{
+      const cell = ws2[cellAddr];
+      if(cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('https://drive.google.com')){
+        cell.l = {Target: cell.v, Tooltip: "Ver foto en Google Drive"};
+        cell.s = {font: {color: {rgb: "0563C1"}, underline: true}};
+      }
+    });
     XLSX.utils.book_append_sheet(wb,"Fotos (resumen)",ws2);
 
     // ── Sheet 3: Resumen ──
@@ -962,8 +1087,16 @@ async function doExport(){
     const ws3=XLSX.utils.aoa_to_sheet(sm);ws3["!cols"]=[{wch:22},{wch:14}];
     XLSX.utils.book_append_sheet(wb,"Resumen",ws3);
 
+    // Make Drive links clickable in main sheet
+    Object.keys(ws).filter(k=>k[0]!=='!').forEach(cellAddr=>{
+      const cell = ws[cellAddr];
+      if(cell && cell.v && typeof cell.v === 'string' && cell.v.startsWith('https://drive.google.com')){
+        cell.l = {Target: cell.v, Tooltip: "Ver foto en Google Drive"};
+        cell.s = {font: {color: {rgb: "0563C1"}, underline: true}};
+      }
+    });
     XLSX.writeFile(wb, filename+".xlsx");
-    toast("✅ Excel descargado");
+    toast("✅ Excel con links descargado");
   }
 
   // ── OPTION B: ZIP with photos organized by city/POS ──
@@ -1048,7 +1181,14 @@ async function doExport(){
   const totalLinks = Object.values(driveLinks).reduce((s,v)=>s+Object.values(v).filter(Boolean).length,0);
   if(totalPhotos > 0 && totalLinks < totalPhotos){
     const sinLink = totalPhotos - totalLinks;
-    setTimeout(()=>toast(`⚠️ ${sinLink} foto${sinLink>1?'s':''} sin link Drive (solo local)`, false), 1200);
+    setTimeout(()=>{
+      toast(`⚠️ ${sinLink} foto${sinLink>1?'s':''} sin link Drive (solo local)`, false);
+    }, 1200);
+    setTimeout(async()=>{
+      if(confirm(`${sinLink} foto${sinLink>1?'s':''} no tienen link de Drive.\n\n¿Intentar subirlas ahora a Google Drive?`)){
+        await retryDriveUpload();
+      }
+    }, 2000);
   }
 }
 buildProvinceGrid();
