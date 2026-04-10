@@ -374,15 +374,6 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
   .toast.show{transform:translateX(-50%) translateY(0);}
 }
 
-/* ── Very small (≤380px) ── */
-
-
-
-
-
-
-.mob-bar { display: none; }
-
 /* ═══════════════════════════════════════
    TABLET  ≤ 900px
 ═══════════════════════════════════════ */
@@ -460,7 +451,8 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
   .map-wrap.mob-active { display: block; }
 
   /* ── Bottom tab bar ── */
-  .mob-bar {
+  .mob-bar { display: none; }
+.mob-bar {
     grid-row: 3;
     grid-column: 1;
     display: flex;
@@ -577,9 +569,6 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
   .prov-active-banner { font-size: 11px; padding: 6px 12px; }
 }
 
-/* ── Very small ≤ 360px ── */
-@media (max-width: 360px) {
-  .hs-wrap { display: none; }
   header { justify-content: space-between; }
 }
 
@@ -589,6 +578,208 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
   flex-shrink: 0;
 }
 .maps-btn:hover { background: var(--bl); }
+
+
+/* ═══════════════════════════════════════
+   TABLET ≤ 900px
+═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  body { grid-template-columns: 280px 1fr; }
+  .hpw { display: none; }
+  .hs  { padding: 4px 8px; }
+  .hsv { font-size: 13px; }
+  .hsl { font-size: 8px; }
+}
+
+/* ═══════════════════════════════════════
+   MOBILE ≤ 640px  —  Field Worker Mode
+═══════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* Layout: header / content / bottom nav */
+  body {
+    grid-template-columns: 1fr;
+    grid-template-rows: 52px 1fr 64px;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    grid-column: 1; grid-row: 1;
+    padding: 0 12px; gap: 8px;
+  }
+  .lt   { font-size: 15px; }
+  .li   { width: 26px; height: 26px; }
+  .li svg { width: 13px; height: 13px; }
+  .hd   { display: none; }
+  .hs-wrap {
+    flex: 1; overflow-x: auto; gap: 0;
+    scrollbar-width: none;
+  }
+  .hs-wrap::-webkit-scrollbar { display: none; }
+  .hs   { padding: 2px 7px; min-width: fit-content; flex-shrink: 0; }
+  .hsv  { font-size: 12px; }
+  .hsl  { font-size: 7px; }
+  .hpw  { display: none; }
+
+  /* ── Content area ── */
+  aside {
+    grid-column: 1; grid-row: 2;
+    height: 100%; border-right: none;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .map-wrap {
+    grid-column: 1; grid-row: 2;
+    display: none; height: 100%; position: relative;
+  }
+  .map-wrap.mob-visible { display: block; }
+
+  /* ── Province/city bar compact ── */
+  .prov-bar   { padding: 8px 10px; }
+  .prov-grid  {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px; max-height: none;
+  }
+  .pvcard     { padding: 8px 10px; border-radius: 8px; }
+  .pvname     { font-size: 12px; }
+  .pvmeta     { font-size: 9px; }
+
+  /* ── City list ── */
+  .cl { max-height: 160px; }
+  .cn { font-size: 12px; }
+
+  /* ── Day filter tabs ── */
+  .dts {
+    flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; padding-bottom: 2px;
+  }
+  .dts::-webkit-scrollbar { display: none; }
+  .dt { flex-shrink: 0; padding: 6px 12px; font-size: 11px; }
+
+  /* ── POS panel fills remaining space ── */
+  .pp-panel {
+    flex: 1 1 0; min-height: 0;
+    overflow-y: auto; padding: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pp-panel.vis { display: flex; flex-direction: column; }
+
+  /* ── POS Card — field-worker friendly ── */
+  .pc {
+    border-radius: 10px; margin-bottom: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .pc:active { transform: scale(.99); }
+  .pnum  { width: 36px; font-size: 16px; }
+  .pbody { padding: 9px 8px; }
+  .pname { font-size: 12.5px; font-weight: 700; }
+  .pchain{ font-size: 9.5px; }
+  .paddr { font-size: 9.5px; }
+  .pot   { font-size: 9px; -webkit-line-clamp: 1; }
+
+  /* ── BIG quick mark buttons for field use ── */
+  .pacts { padding: 4px 6px; gap: 6px; }
+  .qb    { width: 44px; height: 40px; font-size: 18px; border-radius: 8px; }
+
+  /* ── Timing row compact ── */
+  .ptm    { flex-wrap: wrap; }
+  .ptc    { padding: 4px 6px; font-size: 9px; }
+  .ptv    { font-size: 11px; }
+
+  /* ── Day header ── */
+  .pdl    { padding: 6px 8px; }
+  .pdt    { font-size: 11px; }
+  .pdc    { font-size: 9px; padding: 2px 6px; }
+
+  /* ── Map overlays ── */
+  /* Info panel as bottom sheet on map */
+  .iov {
+    top: auto; bottom: 70px; right: 8px; left: 8px;
+    min-width: 0; max-height: 40vh;
+    overflow-y: auto; border-radius: 12px;
+    padding: 10px 12px; font-size: 10px;
+    pointer-events: auto;
+  }
+  .iocn { font-size: 14px; }
+  .iods { max-height: 120px; overflow-y: auto; }
+
+  /* Hide params on mobile */
+  .pov { display: none; }
+
+  /* ── Bottom tab bar ── */
+  .mob-bar { display: none; }
+.mob-bar {
+    grid-column: 1; grid-row: 3;
+    display: flex !important;
+    background: var(--wh);
+    border-top: 1.5px solid var(--bd);
+    box-shadow: 0 -2px 8px rgba(0,0,0,.1);
+  }
+  .mob-tab {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; padding: 6px 0 10px;
+    cursor: pointer; border: none; background: none;
+    color: var(--t3); font-family: "Barlow Condensed", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .15s, background .15s;
+  }
+  .mob-tab.on { color: var(--blue); background: #eff6ff; }
+  .mob-tab-ico { font-size: 22px; line-height: 1; }
+  .mob-tab-lbl { font-size: 10px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; }
+
+  /* ── Modal slides up from bottom ── */
+  .mbg  { align-items: flex-end; }
+  .mdl  {
+    width: 100%; max-width: 100%;
+    max-height: 90dvh; overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    animation: slideUp .3s cubic-bezier(.32,0,.67,1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: .5; }
+    to   { transform: translateY(0);    opacity: 1;  }
+  }
+  /* Drag handle */
+  .mdl::before {
+    content: ''; display: block;
+    width: 40px; height: 4px;
+    background: var(--bd2); border-radius: 2px;
+    margin: 10px auto 0;
+  }
+  .mhdr { padding: 10px 16px 10px; position: sticky; top: 0; z-index: 1; }
+  .mbody { padding: 12px 16px 4px; }
+  .mftr  { padding: 8px 16px 24px; }
+
+  /* Status buttons — bigger for touch */
+  .status-row { gap: 12px; margin-bottom: 16px; }
+  .sbtn { padding: 16px 12px; border-radius: 10px; }
+  .sem  { font-size: 30px; }
+  .slb  { font-size: 14px; }
+
+  /* Photo slots larger touch targets */
+  .pslot-hdr    { padding: 12px 14px; min-height: 50px; }
+  .pslot-upload { padding: 20px 16px; }
+  .pslot-upload-ico { font-size: 32px; margin-bottom: 6px; }
+  .pslot-upload-tx  { font-size: 13px; }
+
+  /* Toast */
+  .toast {
+    bottom: 72px; left: 50%; right: auto;
+    transform: translateX(-50%) translateY(30px);
+    white-space: nowrap; font-size: 12px;
+    border-radius: 20px; padding: 8px 16px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Province banner */
+  .prov-active-banner { font-size: 11px; padding: 6px 12px; }
+}
+
+@media (max-width: 380px) {
+  .hs-wrap { display: none; }
+}
 
 </style>
 </head>
@@ -631,7 +822,7 @@ aside{background:var(--wh);border-right:1px solid var(--bd);display:flex;flex-di
 </aside>
 <div class="mwrap">
   <div id="map"></div>
-  <div class="iov" id="iov">
+  <div class="iov" id="iov" onclick="if(window.innerWidth<=640)this.classList.remove('vis')">
     <div class="ioh">
       <div class="ioic"><svg width="15" height="15" fill="white" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
       <div class="iocn" id="iocn">—</div>
@@ -888,7 +1079,14 @@ function clearProvince(){
   buildProvinceGrid();
 }
 
-function selC(city){acity=city;aday="all";bldCities(document.getElementById("srch").value);bldTabs(city);bldList(city,"all");rMap(city,"all");updI(city);}
+function selC(city){
+  acity=city;aday="all";
+  bldCities(document.getElementById("srch").value);
+  bldTabs(city);
+  bldList(city,"all");
+  rMap(city,"all");
+  updI(city);
+}
 
 function bldTabs(city){
   const panel=document.getElementById("dp"),tabs=document.getElementById("dts");
@@ -992,22 +1190,28 @@ function updI(city){
     br.appendChild(bar);
   });
   document.getElementById("iov").classList.add("vis");
+  // Auto-hide info overlay on mobile after 4s
+  if(window.innerWidth <= 640){
+    clearTimeout(window._iovTimer);
+    window._iovTimer = setTimeout(()=>{
+      document.getElementById("iov").classList.remove("vis");
+    }, 4000);
+  }
 }
 
 // MAP
-// Briefly show map-wrap so Leaflet can measure dimensions
+// Ensure map-wrap is visible for Leaflet init
 const _mw = document.querySelector('.map-wrap');
-const _mwWasHidden = _mw && getComputedStyle(_mw).display === 'none';
-if(_mwWasHidden) _mw.style.display = 'block';
+if(_mw) _mw.style.cssText = 'display:block!important;visibility:hidden;';
 
 map=L.map("map",{zoomControl:true,attributionControl:false}).setView([-9,-75],5);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
   maxZoom:19,
-  attribution:'© OpenStreetMap'
+  attribution:'© CartoDB'
 }).addTo(map);
 
-// Re-hide if it was hidden (mobile)
-if(_mwWasHidden){ _mw.style.display = 'none'; }
+// After init, restore normal display
+if(_mw) _mw.style.cssText = '';
 function clrMap(){Object.values(mkrs).forEach(m=>map.removeLayer(m));lines.forEach(l=>map.removeLayer(l));mkrs={};lines=[];}
 function mkSvg(n,c,vs){
   if(vs==="visited")return`<svg width="30" height="36" viewBox="0 0 30 36"><path d="M15 2C8.37 2 3 7.37 3 14c0 9 12 20 12 20s12-11 12-20C27 7.37 21.63 2 15 2z" fill="#059669" stroke="white" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,.3))"/><text x="15" y="17.5" text-anchor="middle" font-size="14" fill="white">✓</text></svg>`;
@@ -1562,23 +1766,19 @@ function mobTab(tab) {
   const mapBtn  = document.getElementById('mtab-map');
   if (tab === 'list') {
     aside.style.display = '';
-    mapWrap.classList.remove('mob-active');
+    mapWrap.classList.remove('mob-visible');
     listBtn.classList.add('on');
     mapBtn.classList.remove('on');
   } else {
     aside.style.display = 'none';
-    mapWrap.classList.add('mob-active');
+    mapWrap.classList.add('mob-visible');
     mapBtn.classList.add('on');
     listBtn.classList.remove('on');
-    // Force Leaflet to recalculate tiles after becoming visible
     if (map) {
       setTimeout(() => {
-        map.invalidateSize();
-        // Reload tiles if needed
-        map.eachLayer(layer => {
-          if (layer._url) layer.redraw();
-        });
-      }, 100);
+        map.invalidateSize(true);
+        map.eachLayer(l => { if(l.redraw) l.redraw(); });
+      }, 150);
     }
   }
 }
@@ -1586,8 +1786,9 @@ window.addEventListener('resize', () => {
   if (window.innerWidth > 640) {
     document.querySelector('aside').style.display = '';
     const mw = document.querySelector('.map-wrap');
-    mw.classList.remove('mob-active');
+    mw.classList.remove('mob-visible');
     mw.style.display = '';
+    if(map) setTimeout(()=>map.invalidateSize(),100);
   }
 });
 
